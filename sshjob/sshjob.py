@@ -742,7 +742,7 @@ def help():
     print("See https://github.com/shuheikurita/sshjob")
 
 def init():
-    sshjob()
+    pyjobs()
     help()
 
 if __name__ == '__main__':
