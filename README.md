@@ -49,10 +49,10 @@ cd $HOME/s2s
 GPU=%d
 CUDA_VISIBLE_DEVICES= $GPU python s2s.sh
 """%gpu
-jobs.qsub(shell_file,"run.sh")
+jobs.qsub(shell_file,"run.sh",jc="")
 ```
 
-The create a new shell file of run.sh as
+The new shell file of `run.sh` is
 ```bash
 # (header)
 cd $HOME/s2s
@@ -60,7 +60,7 @@ GPU=0
 CUDA_VISIBLE_DEVICES= $GPU python s2s.sh
 # (footer)
 ```
-.
+. The header is important for grid engines of HPC and specified in `jc=""` of qsub function.
 
 You can specify the port number (ex. 12345) such as
 ```python
