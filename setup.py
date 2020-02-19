@@ -51,6 +51,6 @@ setup(
     entry_points="""
       # -*- Entry points: -*-
       [console_scripts]
-      pkgdep = pypipkg.scripts.command:main
+      init = pypipkg.scripts.command:main
     """,
 )
