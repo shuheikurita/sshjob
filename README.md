@@ -159,7 +159,7 @@ This doesn't delete a job from `jobs`.
 
 ### Delete a job log
 ```python
-jobs.kill(jobid=-1)
+jobs.rm(jobid)
 ```
 When the job of `jobid` is stopped or finished, this deletes a job from `jobs` and move the job log files to `trush` directory on remote.
 
