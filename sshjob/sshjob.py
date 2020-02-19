@@ -47,11 +47,12 @@ class pyjobs(OrderedDict):
                 print("[SSHJOB] load from "+self.file)
             else:
                 date=datetime.datetime.today().strftime("%Y%m%d")[2:]
-                file = "pyraiden"+date
+                file = "pyjobs"+"."+date
                 for i in range(100):
                     if not os.path.isfile(file+".%02d"%i):
                         self.file = file+".%02d"%i
-                        print("[SSHJOB] Save to",self.file,"For loading, use:  jobs.load(\"%s\")"%self.file)
+                        print("[SSHJOB] Save to",self.file)
+                        print("[SSHJOB] For loading, use:  jobs.load(\"%s\")"%self.file)
                         break
                 else:
                     raise NameError("[SSHJOB] TOO MANY FILES")
@@ -86,7 +87,8 @@ class pyjobs(OrderedDict):
             self[jobid]=pyjob(**jobname)
         if path:
             self.file=path
-            print("[SSHJOB] Save to",self.file,"For loading, use:  jobs.load(\"%s\")"%self.file)
+            print("[SSHJOB] Save to",self.file)
+            print("[SSHJOB] For loading, use:  jobs.load(\"%s\")"%self.file)
         else:
             self.file=expand["file"]
         self.environments = expand["environments"] if "environments" in expand else [":::SHELL"]
@@ -126,7 +128,7 @@ class pyjobs(OrderedDict):
 
     def show_job_queue(self):
         list_job_queues = [name for name,func in self.job_queues.items()]
-        print("We recognize %d job queues of : %s"%(len(self.job_queues),", ".join(list_job_queues)))
+        print("[SSHJOB] We recognize %d job queues of : %s"%(len(self.job_queues),", ".join(list_job_queues)))
 
     #def __setitem__(self, key, value):
     #    if isinstance(key, str):
