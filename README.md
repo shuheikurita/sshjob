@@ -70,7 +70,7 @@ gpu=0
 shell_file="""
 cd $HOME/s2s
 GPU=%d
-CUDA_VISIBLE_DEVICES= python s2s.sh
+CUDA_VISIBLE_DEVICES=$GPU python s2s.sh
 """%gpu
 jobs.qsub(shell_file,"run.sh",jc="+gpu,g1,72h")
 ```
