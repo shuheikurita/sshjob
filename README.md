@@ -126,9 +126,6 @@ def sge_custom(short,jc=None,docker=""):
         "#$ -cwd",
     ]
     return result,docker
-
-def shell(short,docker=""):
-    return ["#localhost"],docker
     
 JOB_ENVIRONMENTS = ["localhost:s2s::SHELL","server1:s2s::SHELL","hpc_server:s2s::SGE_CUSTOM",]
 JOB_QUEUS        = {"SGE_CUSTOM":sge_custom}
