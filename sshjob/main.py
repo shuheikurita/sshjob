@@ -70,7 +70,7 @@ class pyjobs(OrderedDict):
         else:
             expand = json.load(open(self.file,"r"))
         if not merge:
-            super().clear()
+            super(pyjobs, self).clear()
             #super().__init__(expand["jobs"])
         else:
             #super().merge(OrderedDict(expand["jobs"]))
@@ -486,7 +486,7 @@ class pyjobs(OrderedDict):
         for jobid,info in self.items():
             raise NotImplemented
             self.trash(info,server=ssh,cd=sshdir)
-        super().clear()
+        super(pyjobs, self).clear()
         if save:
             self.dump()
 
@@ -560,7 +560,7 @@ class pyjob(dict):
         # jobname : name of shellfile
         # jobfile : contexts of shellfile
 
-        super().__init__({"qsub":qsub,
+        super(pyjob, self).__init__({"qsub":qsub,
                           "jobid":str(jobid),
                           "jobname":jobname,
                           "state":state,
@@ -693,19 +693,19 @@ def qdel(jobid):
     stop = subprocess.run(["qdel",jobid], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     return stop
 
-def rerun(jobnames,raiden):
-    jobs=qstat()
-    for job in jobnames:
-        state=get_state("2444381",jobs)
-        if "r"==state:
-            jobid=raiden[job]
-            stop = subprocess.run(["qdel",jobid], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            print(stop)
-            star = subprocess.run(["qsub",job], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            print(star)
-            raiden[job] = subprocess.run(["qsub",shellfile], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        else:
-            print(job," state is ",state)
+#def rerun(jobnames,raiden):
+#    jobs=qstat()
+#    for job in jobnames:
+#        state=get_state("2444381",jobs)
+#        if "r"==state:
+#            jobid=raiden[job]
+#            stop = subprocess.run(["qdel",jobid], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+#            print(stop)
+#            star = subprocess.run(["qsub",job], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+#            print(star)
+#            raiden[job] = subprocess.run(["qsub",shellfile], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+#        else:
+#            print(job," state is ",state)
 
 def get_opt():
     return [\
@@ -718,12 +718,18 @@ def get_datetime():
     return datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')[2:-4]
 
 def help():
-    print('commands="python src/arcrl.py "')
-    print('qsub(commands,"semrl_sl.sh",jc="+g,7d",raiden=semrl_pub_7d)')
+    print("jobs = pyjobs()")
+    print("jobs.qsub()")
+    print("jobs.show()")
+    print()
     print("jobtype: 1d,3d,7d")
     print("jobtype: +gpu,8g,3d -> +g8 7d")
+    print()
+    print("See https://github.com/shuheikurita/sshjob")
+
+def init():
+    pyjobs()
+    help()
 
 if __name__ == '__main__':
     help()
-    print(get_jcac("+cpu,skl,3d"))
-    print(get_jcac("+g,dev"))

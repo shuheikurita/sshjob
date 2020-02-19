@@ -22,7 +22,7 @@ version = next((line.split('=')[1].strip().replace("'", '')
                                               'sshjob',
                                               '__init__.py'))
                 if line.startswith('__version__ = ')),
-               '0.0.dev0')
+               '0.0.dev2')
 
 setup(
     name="sshjob",
@@ -41,7 +41,6 @@ setup(
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
@@ -51,6 +50,6 @@ setup(
     entry_points="""
       # -*- Entry points: -*-
       [console_scripts]
-      init = sshjob.scripts.main:init
+      init = sshjob.main:init
     """,
 )
