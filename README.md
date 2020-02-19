@@ -75,7 +75,7 @@ cd $HOME/s2s
 GPU=%d
 CUDA_VISIBLE_DEVICES=$GPU python s2s.sh
 """%gpu
-jobs.qsub(shell_file,"run.sh",jc="+gpu,g1,72h")
+jobs.qsub(shell_file,"run.sh")
 ```
 This use ssh of `ssh -p 12345 server2` background.
 
