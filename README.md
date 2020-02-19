@@ -4,9 +4,9 @@
 
 A Python-based and jupyter-friendly job management system for remote serevers and HPC job management systems.
 
-sshjob allows to submit/list/detele/track jobs on Univa Grid Engine (UGE) or Sun Grid Engine (SGE) from python program.
+Sshjob allows to submit/list/detele/track jobs on Univa Grid Engine (UGE) or Sun Grid Engine (SGE) from python program.
 It enables to remotely execute `qsub`, `qstat`, `qdel` (via `ssh`) and show the log/error files on local jupyter notebook (or jupyter lab).
-It can also make it possible to execute jobs on other machines via `ssh` and `nohup` (under developments).
+It can also make it possible to execute jobs on other machines via `ssh` and `nohup`.
 
 ## Requirements
 - `ssh` environment to remote machine. pyjobs is designed to be run on local machine. `ssh` connection to remote machines (such as ABCI) must be prerequired.
