@@ -28,16 +28,16 @@ On python, run
 from sshjob import *
 jobs=pyjobs()
 ```
-to initialize `jobs` instance of pyjobs.
+to initialize `pyjobs` instance of pyjobs. Here `jobs` is a sub-class of the ordered dictionary.
 
-`jobs` instance is used to manage your jobs on a specific remote (or local) machine.
+`pyjobs` instance is used to manage your jobs on a specific remote (or local) machine.
 `jobs.qsub()`
 `jobs.show()`
 `jobs.kill()`
 `jobs.rm()`
 `jobs.bye()`
 
-- Run job
+### Run jobs on remote shell
 
 This is ax example to create a shellfile of `run.sh`, transfer the shellfile to `server1:~/s2s/run.sh` and execute it with `nohup`.
 ```python
@@ -47,7 +47,7 @@ gpu=0
 shell_file="""
 cd $HOME/s2s
 GPU=%d
-CUDA_VISIBLE_DEVICES= $GPU python s2s.sh
+CUDA_VISIBLE_DEVICES=$GPU python s2s.sh
 """%gpu
 jobs.qsub(shell_file,"run.sh",jc="")
 ```
@@ -57,7 +57,7 @@ The new shell file of `run.sh` is
 # (header)
 cd $HOME/s2s
 GPU=0
-CUDA_VISIBLE_DEVICES= $GPU python s2s.sh
+CUDA_VISIBLE_DEVICES=$GPU python s2s.sh
 # (footer)
 ```
 . The header is important for grid engines of HPC and specified in `jc=""` of qsub function.
@@ -74,6 +74,8 @@ CUDA_VISIBLE_DEVICES= python s2s.sh
 """%gpu
 jobs.qsub(shell_file,"run.sh",jc="+gpu,g1,72h")
 ```
+
+### Run jobs on remote HPC
 
 For HPC with a SGE job shceduler,
 ```python
@@ -131,30 +133,43 @@ jobs=pyjobs(
     )
 ```
 
-- Show job list
+### Show job list
 
+Show jobid, job states and git states if available.
 ```python
 jobs.show()
 ```
-
 For details
 ```python
 jobs.show(depth=1,no_update=False)
 ```
 .
 
-- Assign a job to the `jobs` instance later
+### Track job log and error outputs
+```
+jobs.track(jobid=-1)
+```
+`jobid==0` is the initial job and `jobid==-1` is the last job on the `jobs` ordered dictionary. 
+
+### Stop (kill) a job
+```
+jobs.kill(jobid)
+```
+
+### Assign a job to the `jobs` instance later
 ```python
 jobs[3059261]=pyjob(jobid="3059261",jobname="s2s.sh",jobfile=`cat s2s.sh`)
 #jobs.dump()
 ```
 
--- Delete a latest job and its log
-
-`jobs.kill()`+`jobs.rm()`
-
+### Delete a job log
 ```python
-jobs.bye(-1)
+jobs.kill(jobid=-1)
+```
+
+### Stop and delete one latest job.
+```python
+jobs.bye(jobid=-1) # `jobs.kill(jobid=-1)`+`jobs.rm(jobid=-1)`
 ```
 
 - shell support with ssh
