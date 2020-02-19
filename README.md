@@ -174,7 +174,7 @@ jobs[3059261]=pyjob(jobid="3059261",jobname="s2s.sh",jobfile=`cat s2s.sh`)
 #jobs.dump()
 ```
 
-### Remote shell support via ssh
+### Remote shell support via ssh (experimental)
 
 ```python
 def shellrun(commandline,server,cd,ssh_bash_profile=True,nohup=False)
