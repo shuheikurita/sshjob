@@ -8,7 +8,11 @@ It can also make it possible to execute jobs on other machines via `ssh` and `no
 ## Requirements
 - `ssh` environment to remote machine. pyjobs is designed to be run on local machine. `ssh` connection to remote machines (such as ABCI) must be prerequired.
 
+<<<<<<< HEAD
 Sshjob provides easy and sophiscated way to access your servers, HPC clusters via ssh and python including notebooks and jupyter-lab. sshjob doesn't provide the ssh and job-running environment. They should be established before sshjob is introduced.
+=======
+Sshrun provides easy and sophiscated ways to access your servers and HPC clusters via ssh and python including notebooks and jupyter-lab. Sshrun doesn't provide the ssh and job-running environments. They should be established before sshrun is introduced.
+>>>>>>> ef8dcb2fad0840f245b35afdf0c0388ea02cf6e6
 
 ## Install
 ```bash
