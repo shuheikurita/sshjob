@@ -84,7 +84,7 @@ This use ssh of `ssh -p 12345 server2` background.
 For HPC with a SGE job shceduler,
 ```python
 from sshjob import *
-jobs=pyjobs("localhost:s2s:12345:SGE_DEFAULT")
+jobs=pyjobs("hpc_login:s2s::SGE_DEFAULT")
 
 shell_file="""
 cd $HOME/s2s
@@ -94,8 +94,9 @@ python s2s.sh
 jobs.qsub(shell_file,"run.sh",jc="+gpu,g1,72h")
 jobs.show()
 ```
-. Since job scheduler engines have many dialogs, you need to manually define an job_queues function for many cases.
+. We assume the job schduler is on `hpc_login` that can be reached directly via `ssh`.
 
+Since job scheduler engines have many dialogs, you need to manually define an job_queues function for many cases:
 ```python
 
 def sge_custom(short,jc=None,docker=""):
@@ -134,7 +135,7 @@ JOB_QUEUS        = {"SGE_CUSTOM":sge_custom}
 
 jobs=pyjobs(
     environments = JOB_ENVIRONMENTS,
-    job_queus = JOB_QUEUS,
+    job_queus    = JOB_QUEUS,
     )
 ```
 
