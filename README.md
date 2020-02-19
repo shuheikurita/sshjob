@@ -1,18 +1,15 @@
-# sshjob
+# Sshjob - Free from shell scripts that generate other shell scripts on HPC
+
 A Python-based and jupyter notebook-friendly job manegement system for remote job management systems.
 
-pyjobs allows to submit/list/detele/track jobs on Univa Grid Engine (UGE) or Sun Grid Engine (SGE).
+sshjob allows to submit/list/detele/track jobs on Univa Grid Engine (UGE) or Sun Grid Engine (SGE) from python program.
 It enables to remotely execute `qsub`, `qstat`, `qdel` (via `ssh`) and show the log/error files on local jupyter notebook (or jupyter lab).
 It can also make it possible to execute jobs on other machines via `ssh` and `nohup` (under developments).
 
 ## Requirements
 - `ssh` environment to remote machine. pyjobs is designed to be run on local machine. `ssh` connection to remote machines (such as ABCI) must be prerequired.
 
-<<<<<<< HEAD
-Sshjob provides easy and sophiscated way to access your servers, HPC clusters via ssh and python including notebooks and jupyter-lab. sshjob doesn't provide the ssh and job-running environment. They should be established before sshjob is introduced.
-=======
-Sshrun provides easy and sophiscated ways to access your servers and HPC clusters via ssh and python including notebooks and jupyter-lab. Sshrun doesn't provide the ssh and job-running environments. They should be established before sshrun is introduced.
->>>>>>> ef8dcb2fad0840f245b35afdf0c0388ea02cf6e6
+Sshjob provides easy and sophisticated way to access your servers, HPC clusters via ssh and python including notebooks and jupyter-lab. sshjob doesn't provide the ssh and job-running environment. They should be established before sshjob is introduced.
 
 ## Install
 ```bash
