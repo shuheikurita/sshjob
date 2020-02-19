@@ -1,3 +1,6 @@
+build/
+dist/
+sshjob.egg-info/
 .*.swp
 .*.swo
 *.pyc
