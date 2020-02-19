@@ -28,9 +28,9 @@ On python, run
 from sshjob import *
 jobs=pyjobs()
 ```
-to initialize `pyjobs` instance of pyjobs. Here `jobs` is a sub-class of the ordered dictionary.
+to initialize a `pyjobs` instance. `pyjobs` is a sub-class of the ordered dictionary.
 
-`pyjobs` instance is used to manage your jobs on a specific remote (or local) machine.
+`pyjobs` is used to manage your jobs on a specific remote (or local) machine.
 `jobs.qsub()`
 `jobs.show()`
 `jobs.kill()`
