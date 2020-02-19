@@ -62,10 +62,10 @@ CUDA_VISIBLE_DEVICES=$GPU python s2s.sh
 ```
 . The header is important for grid engines of HPC and specified in `jc=""` of qsub function.
 
-You can specify the port number (ex. 12345) such as
+You can specify the port number (ex. 12345) for server2 such as
 ```python
 from sshjob import *
-jobs=pyjobs("localhost:s2s:12345:SHELL")
+jobs=pyjobs("server2:s2s:12345:SHELL")
 gpu=0
 shell_file="""
 cd $HOME/s2s
@@ -74,6 +74,7 @@ CUDA_VISIBLE_DEVICES=$GPU python s2s.sh
 """%gpu
 jobs.qsub(shell_file,"run.sh",jc="+gpu,g1,72h")
 ```
+This use ssh of `ssh -p 12345 server2` background.
 
 ### Run jobs on remote HPC
 
