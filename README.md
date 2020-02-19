@@ -9,7 +9,8 @@ It enables to remotely execute `qsub`, `qstat`, `qdel` (via `ssh`) and show the 
 It can also make it possible to execute jobs on other machines via `ssh` and `nohup`.
 
 ## Requirements
-- `ssh` environment to remote machine. pyjobs is designed to be run on local machine. `ssh` connection to remote machines (such as ABCI) must be prerequired.
+- `ssh` environment to remote machines from the local machine where you run sshjob. You also need `ssh-agent` to auth without passwords.
+- `bash` and `nohup` (for job execution on remote shells) on local and remote machine.
 
 Sshjob provides easy and sophisticated way to access your servers, HPC clusters via ssh and python including notebooks and jupyter-lab. sshjob doesn't provide the ssh and job-running environment. They should be established before sshjob is introduced.
 
