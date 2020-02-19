@@ -19,9 +19,10 @@ pip install sshjob
 ```
 
 ## Usage
-pyjobs is designed to be run on local Jupyter notebook environment.
+Sshjob is designed to be run on local Jupyter notebook environment.
+Jupyter is recommended but not mandatory.
 
-On jupyter notebooks, run
+On python, run
 ```python
 from sshjob import *
 jobs=pyjobs()
