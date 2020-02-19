@@ -149,17 +149,19 @@ jobs.show(depth=1,no_update=False)
 ```
 jobs.track(jobid=-1)
 ```
-`jobid==0` is the initial job and `jobid==-1` is the last job on the `jobs` ordered dictionary. 
+`jobid==0` is the initial job and `jobid==-1` is the last job on the `jobs` instance of the ordered dictionary. 
 
 ### Stop (kill) a job
 ```
 jobs.kill(jobid)
 ```
+This doesn't delete a job from `jobs`.
 
 ### Delete a job log
 ```python
 jobs.kill(jobid=-1)
 ```
+When the job of `jobid` is stopped or finished, this deletes a job from `jobs` and move the job log files to `trush` directory on remote.
 
 ### Stop and delete one latest job.
 ```python
