@@ -27,7 +27,7 @@ version = next((line.split('=')[1].strip().replace("'", '')
 setup(
     name="sshjob",
     version=version,
-    url='https://github.com/user/pypipkg',
+    url='https://github.com/shuheikurita/sshjob',
     author='shuheikurita',
     author_email='shuheikurita@example.jp',
     maintainer='shuheikurita',
@@ -36,7 +36,7 @@ setup(
     long_description=readme,
     packages=find_packages(),
     install_requires=_requires_from_file('requirements.txt'),
-    license="GPL v2",
+    license="GPLv2",
     classifiers=[
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
