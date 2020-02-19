@@ -80,14 +80,15 @@ jobs.qsub(shell_file,"run.sh",jc="+gpu,g1,72h")
 For HPC with a SGE job shceduler,
 ```python
 from sshjob import *
-jobs=pyjobs("localhost:s2s:12345:SHELL")
-gpu=0
+jobs=pyjobs("localhost:s2s:12345:SGE_DEFAULT")
+
 shell_file="""
 cd $HOME/s2s
-GPU=%d
-CUDA_VISIBLE_DEVICES= python s2s.sh
-"""%gpu
+source your_hpc_settings.sh
+python s2s.sh
+"""
 jobs.qsub(shell_file,"run.sh",jc="+gpu,g1,72h")
+jobs.show()
 ```
 . Since job scheduler engines have many dialogs, you need to manually define an job_queues function for many cases.
 
