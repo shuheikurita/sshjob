@@ -42,7 +42,7 @@ gpu=0
 shell_file="""
 cd $HOME/s2s
 GPU=%d
-CUDA_VISIBLE_DEVICES=\$GPU python s2s.sh
+CUDA_VISIBLE_DEVICES= $GPU python s2s.sh
 """%gpu
 jobs.qsub(shell_file,"run.sh")
 ```
@@ -52,7 +52,7 @@ The create a new shell file of run.sh as
 # (header)
 cd $HOME/s2s
 GPU=0
-CUDA_VISIBLE_DEVICES=\$GPU python s2s.sh
+CUDA_VISIBLE_DEVICES= $GPU python s2s.sh
 # (footer)
 ```
 .
