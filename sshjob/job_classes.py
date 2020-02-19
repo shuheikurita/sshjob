@@ -2,7 +2,7 @@
 class job_classes():
 
     @staticmethod
-    def ge_default(short,jc=None,docker=""):
+    def sge_default(short,jc=None,docker=""):
         result=[]
         if "gpu" in short:
             if "large" in short:

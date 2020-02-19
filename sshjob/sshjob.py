@@ -13,8 +13,8 @@ from time import sleep
 
 from collections import OrderedDict
 
-from shell_runs import *
-from job_classes import *
+from sshjob.shell_runs import *
+from sshjob.job_classes import job_classes
 
 from os.path import expanduser
 pyraiden_home=expanduser("~")
@@ -24,8 +24,8 @@ pyraiden_log="pyraiden_log/"
 
 require_files=["header_basic.sh","header_cpu.sh", "header_gpu.sh","footer.sh"]
 
-#SYSTEMS = ["local:::RAIDEN", "local:::SHELL","abci:::ABCI"] # ["ssh:raiden:22:SGE"]
-JOBSYSTEM = {"RAIDEN":job_classes.raiden,"ABCI":job_classes.abci,"SHELL":job_classes.shell}
+#JOBSYSTEM = {"RAIDEN":job_classes.raiden, "ABCI":job_classes.abci, "SHELL":job_classes.shell}
+JOBSYSTEM = {"SGE":job_classes.sge_default, "SHELL":job_classes.shell}
 
 class pyjobs(OrderedDict):
     #def __init__(self,basedir="."):
