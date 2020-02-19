@@ -1,6 +1,6 @@
 import os,re
 from time import sleep
-from pyraiden.main import *
+from sshjob.sshjob import *
 import traceback
 
 def printjob(info,first=20,end=20):
