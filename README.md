@@ -156,12 +156,6 @@ jobs.track(jobid=-1)
 jobs.kill(jobid)
 ```
 
-### Assign a job to the `jobs` instance later
-```python
-jobs[3059261]=pyjob(jobid="3059261",jobname="s2s.sh",jobfile=`cat s2s.sh`)
-#jobs.dump()
-```
-
 ### Delete a job log
 ```python
 jobs.kill(jobid=-1)
@@ -172,7 +166,13 @@ jobs.kill(jobid=-1)
 jobs.bye(jobid=-1) # `jobs.kill(jobid=-1)`+`jobs.rm(jobid=-1)`
 ```
 
-- shell support with ssh
+### Assign a job to the `jobs` instance later
+```python
+jobs[3059261]=pyjob(jobid="3059261",jobname="s2s.sh",jobfile=`cat s2s.sh`)
+#jobs.dump()
+```
+
+### Remote shell support via ssh
 
 ```python
 def shellrun(commandline,server,cd,ssh_bash_profile=True,nohup=False)
