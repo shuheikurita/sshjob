@@ -14,7 +14,7 @@ from time import sleep
 from collections import OrderedDict
 
 from sshjob.shell_runs import *
-from sshjob.job_classes import job_classes
+from sshjob.job_queues import *
 
 from os.path import expanduser
 pyraiden_home=expanduser("~")
@@ -24,12 +24,14 @@ pyraiden_log="pyraiden_log/"
 
 require_files=["header_basic.sh","header_cpu.sh", "header_gpu.sh","footer.sh"]
 
-#JOBSYSTEM = {"RAIDEN":job_classes.raiden, "ABCI":job_classes.abci, "SHELL":job_classes.shell}
-JOBSYSTEM = {"SGE":job_classes.sge_default, "SHELL":job_classes.shell}
+DEFAULT_JOB_QUEUE={"SGE_DEFAULT":sge_default, "SHELL":shell}
 
-class pyjobs(OrderedDict):
+class sshjob(OrderedDict):
     #def __init__(self,basedir="."):
-    def __init__(self,systems=[":::RAIDEN"],file=None):
+    def __init__(self,
+                 environments=[":::SHELL"],
+                 job_queues={},
+                 file=None):
         #self.basedir=basedir
         for req in require_files:
             if not os.path.isfile(req):
@@ -50,10 +52,12 @@ class pyjobs(OrderedDict):
                         break
                 else:
                     raise NameError("[SSHJOB] TOO MANY FILES")
-        self.systems = [systems] if isinstance(systems,str) else systems
+        self.environments = [environments] if isinstance(environments,str) else environments
+        self.job_queues = DEFAULT_JOB_QUEUE
+        self.add_job_queue(job_queues)
 
     def dumps(self,to_str=True):
-        expand={"system":self.systems, "file":self.file, "jobs":self}
+        expand={"environments":self.environments, "file":self.file, "jobs":self}
         if to_str:
             return json.dumps(expand)
         else:
@@ -70,7 +74,7 @@ class pyjobs(OrderedDict):
         else:
             expand = json.load(open(self.file,"r"))
         if not merge:
-            super(pyjobs, self).clear()
+            super(sshjob, self).clear()
             #super().__init__(expand["jobs"])
         else:
             #super().merge(OrderedDict(expand["jobs"]))
@@ -82,10 +86,10 @@ class pyjobs(OrderedDict):
             print("[SSHJOB] Save to",self.file,"For loading, use:  jobs.load(\"%s\")"%self.file)
         else:
             self.file=expand["file"]
-        self.systems = expand["system"] if "system" in expand else [":::RAIDEN"]
+        self.environments = expand["environments"] if "environments" in expand else [":::SHELL"]
 
     def show(self,system=None,depth=1,no_update=False,search=[]):
-        system = system if system is not None else self.systems[0]
+        system = system if system is not None else self.environments[0]
         system = system.split(":")
         searches = [search] if isinstance(search,str) else search
         if not no_update:
@@ -112,6 +116,14 @@ class pyjobs(OrderedDict):
         if depth>0:
             print("## File:",self.file)
             print("## Len:",len(self))
+
+    def add_job_queue(self,job_queues={}):
+        self.job_queues.update(job_queues)
+        self.show_job_queue()
+
+    def show_job_queue(self):
+        list_job_queues = [name for name,func in self.job_queues.items()]
+        print("We recognize %d job queues of : %s"%(len(self.job_queues)," ".join(list_job_queues)))
 
     #def __setitem__(self, key, value):
     #    if isinstance(key, str):
@@ -188,7 +200,6 @@ class pyjobs(OrderedDict):
             basedir="",
             baseshell="",
             opts=[],
-            ctype="raiden",
             hold_jid=None,
             hqw=None,
             n=0,
@@ -196,12 +207,12 @@ class pyjobs(OrderedDict):
             system=None,
             qsuboption=[]):
 
-        system = system if system is not None else self.systems[0]
+        system = system if system is not None else self.environments[0]
         system = system.split(":")
         ssh    = None if len(system[0])==0 else system[0]
         sshdir = None if len(system[1])==0 else system[1]
 
-        jc,docker = JOBSYSTEM[system[-1]](jc,docker=docker)
+        jc,docker = self.job_queues[system[-1]](jc,docker=docker)
         opt_er=get_opt()+jc
         opt_er="\n".join(opt_er)
         if n>0:
@@ -326,7 +337,7 @@ class pyjobs(OrderedDict):
         self.dump()
 
     def shell_run(self,commandline,system=None,ssh_bash_profile=True):
-        system = system if system is not None else self.systems[0]
+        system = system if system is not None else self.environments[0]
         system = system.split(":")
         ssh    = None if len(system[0])==0 else system[0]
         sshdir = None if len(system[1])==0 else system[1]
@@ -385,7 +396,7 @@ class pyjobs(OrderedDict):
 
     def updating(self,system=None,depth=0,shellsystem=False):
         raiden=self
-        system = system if system is not None else self.systems[0]
+        system = system if system is not None else self.environments[0]
 
         wait=[]
         fail_to_run=[]
@@ -452,14 +463,14 @@ class pyjobs(OrderedDict):
 
     # Stop job
     def kill(self,keys,system=None,debug=0):
-        system = system if system is not None else self.systems[0]
+        system = system if system is not None else self.environments[0]
         system = system.split(":")
         ssh    = None if len(system[0])==0 else system[0]
         for key in self.get_jid_from_keys(keys):
             kill(self[key],server=ssh,debug=debug)
 
     def kill_all(self,system=None,debug=0):
-        system = system if system is not None else self.systems[0]
+        system = system if system is not None else self.environments[0]
         system = system.split(":")
         ssh    = None if len(system[0])==0 else system[0]
         for jobid,info in self.items():
@@ -467,7 +478,7 @@ class pyjobs(OrderedDict):
 
     # Delete job log files
     def rm(self,keys,save=True,system=None):
-        system = system if system is not None else self.systems[0]
+        system = system if system is not None else self.environments[0]
         system = system.split(":")
         ssh    = None if len(system[0])==0 else system[0]
         sshdir = None if len(system[1])==0 else system[1]
@@ -479,14 +490,14 @@ class pyjobs(OrderedDict):
             self.dump()
 
     def rm_all(self,save=False,system=None):
-        system = system if system is not None else self.systems[0]
+        system = system if system is not None else self.environments[0]
         system = system.split(":")
         ssh    = None if len(system[0])==0 else system[0]
         sshdir = None if len(system[1])==0 else system[1]
         for jobid,info in self.items():
             raise NotImplemented
             self.trash(info,server=ssh,cd=sshdir)
-        super(pyjobs, self).clear()
+        super(sshjob, self).clear()
         if save:
             self.dump()
 
@@ -525,7 +536,7 @@ class pyjobs(OrderedDict):
     # A function that check the remote environment works
     def check_env(self,system=None):
 
-        system = system if system is not None else self.systems[0]
+        system = system if system is not None else self.environments[0]
         system_ = system.split(":")
         ssh    = None if len(system_[0])==0 else system_[0]
         sshdir = None if len(system_[1])==0 else system_[1]
@@ -539,7 +550,7 @@ class pyjobs(OrderedDict):
     # A function to init the remote environment
     def init_env(self,system=None):
 
-        system = system if system is not None else self.systems[0]
+        system = system if system is not None else self.environments[0]
         system_ = system.split(":")
         ssh    = None if len(system_[0])==0 else system_[0]
         sshdir = None if len(system_[1])==0 else system_[1]
@@ -718,7 +729,7 @@ def get_datetime():
     return datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')[2:-4]
 
 def help():
-    print("jobs = pyjobs()")
+    print("jobs = sshjob()")
     print("jobs.qsub()")
     print("jobs.show()")
     print()
@@ -728,7 +739,7 @@ def help():
     print("See https://github.com/shuheikurita/sshjob")
 
 def init():
-    pyjobs()
+    sshjob()
     help()
 
 if __name__ == '__main__':
