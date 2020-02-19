@@ -1,4 +1,4 @@
-# sshrun
+# sshjob
 A Python-based and jupyter notebook-friendly job manegement system for remote job management systems.
 
 pyjobs allows to submit/list/detele/track jobs on Univa Grid Engine (UGE) or Sun Grid Engine (SGE).
@@ -8,7 +8,7 @@ It can also make it possible to execute jobs on other machines via `ssh` and `no
 ## Requirements
 - `ssh` environment to remote machine. pyjobs is designed to be run on local machine. `ssh` connection to remote machines (such as ABCI) must be prerequired.
 
-Sshrun provides easy and sophiscated way to access your servers, HPC clusters via ssh and python including notebooks and jupyter-lab. sshrun doesn't provide the ssh and job-running environment. They should be established before sshrun is introduced.
+Sshjob provides easy and sophiscated way to access your servers, HPC clusters via ssh and python including notebooks and jupyter-lab. sshjob doesn't provide the ssh and job-running environment. They should be established before sshjob is introduced.
 
 ## Install
 ```bash
