@@ -39,19 +39,22 @@ to initialize `pyjobs` instance of pyjobs. Here `jobs` is a sub-class of the ord
 
 ### Run jobs on remote shell
 
-This is ax example to create a shellfile of `run.sh`, transfer the shellfile to `server1:~/s2s/run.sh` and execute it with `nohup`.
+This is an example to create and run a shellfile of `run.sh` on `server1:~/s2s` with `nohup`.
 ```python
 from sshjob import *
-jobs=pyjobs("server1:~/s2s::SHELL")
+jobs=pyjobs("server1:s2s::SHELL")
 gpu=0
+
 shell_file="""
 cd $HOME/s2s
 GPU=%d
 CUDA_VISIBLE_DEVICES=$GPU python s2s.sh
 """%gpu
 jobs.qsub(shell_file,"run.sh",jc="")
-```
 
+jobs.show() # check if running
+```
+This creat a new file of `run.sh`, transfer (`scp`) it to a remote directory of `server1:~/s2s`, and execute it on remote bash with `nohup`.
 The new shell file of `run.sh` is
 ```bash
 # (header)
@@ -60,7 +63,7 @@ GPU=0
 CUDA_VISIBLE_DEVICES=$GPU python s2s.sh
 # (footer)
 ```
-. The header is important for grid engines of HPC and specified in `jc=""` of qsub function.
+. The header is important for grid engines of HPC and specified in `jc="..."` of the input for qsub function.
 
 You can specify the port number (ex. 12345) for server2 such as
 ```python
