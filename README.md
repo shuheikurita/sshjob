@@ -1,4 +1,4 @@
-# pyjobs
+# sshrun
 A Python-based and jupyter notebook-friendly job manegement system for remote job management systems.
 
 pyjobs allows to submit/list/detele/track jobs on Univa Grid Engine (UGE) or Sun Grid Engine (SGE).
@@ -13,10 +13,8 @@ pyjobs is designed to be run on local Jupyter notebook environment.
 
 On jupyter notebooks, run
 ```python
-from pyjobs import *
-import subprocess,json
+from sshjob import *
 jobs=pyjobs()
-jobs,type(jobs),json.dumps(jobs)
 ```
 to initialize `jobs` instance of pyjobs.
 
@@ -28,18 +26,112 @@ to initialize `jobs` instance of pyjobs.
 `jobs.bye()`
 
 - Run job
+
+This is ax example to create a shellfile of `run.sh`, transfer the shellfile to `server1:~/s2s/run.sh` and execute it with `nohup`.
 ```python
-jobs.qsub(s2o,"s2o.sh",jc="+gpu,g1,72h",n=0,docker="nvcr-pytorch-1903")
+from sshjob import *
+jobs=pyjobs("server1:~/s2s::SHELL")
+gpu=0
+shell_file="""
+cd $HOME/s2s
+GPU=%d
+CUDA_VISIBLE_DEVICES= python s2s.sh
+"""%gpu
+jobs.qsub(shell_file,"run.sh")
+```
+
+The run.sh is created as
+```sh
+cd $HOME/s2s
+GPU=%d
+CUDA_VISIBLE_DEVICES= python s2s.sh
+```
+.
+
+You can specify the port number (ex. 12345) such as
+```python
+from sshjob import *
+jobs=pyjobs("localhost:s2s:12345:SHELL")
+gpu=0
+shell_file="""
+cd $HOME/s2s
+GPU=%d
+CUDA_VISIBLE_DEVICES= python s2s.sh
+"""%gpu
+jobs.qsub(shell_file,"run.sh",jc="+gpu,g1,72h")
+```
+
+For HPC with a SGE job shceduler,
+```python
+from sshjob import *
+jobs=pyjobs("localhost:s2s:12345:SHELL")
+gpu=0
+shell_file="""
+cd $HOME/s2s
+GPU=%d
+CUDA_VISIBLE_DEVICES= python s2s.sh
+"""%gpu
+jobs.qsub(shell_file,"run.sh",jc="+gpu,g1,72h")
+```
+. Since job scheduler engines have many dialogs, you need to manually define an job_queues function for many cases.
+
+```python
+
+def sge_custom(short,jc=None,docker=""):
+    result=[]
+    if "gpu" in short:
+        if "large" in short:
+            result.append("#$ -l rt_G.large=1")
+        elif "full" in short:
+            result.append("#$ -l rt_F=1")
+        elif "small" in short:
+            result.append("#$ -l rt_G.small=1")
+        else:
+            raise NameError("Unknown job class",short)
+    else:
+        raise NameError("Unknown job class",short)
+    if "24h" in short:
+        result.append("#$ -l h_rt=24:00:00")
+    elif "72h" in short or "3d" in short:
+        result.append("#$ -l h_rt=72:00:00")
+    elif "168h" in short or "7d" in short:
+        result.append("#$ -l h_rt=168:00:00")
+
+    if jc is not None:
+        result.append("#$ -jc "+jc)
+
+    result+=[
+        "#$ -cwd",
+    ]
+    return result,docker
+
+def shell(short,docker=""):
+    return ["#localhost"],docker
+    
+JOB_ENVIRONMENTS = ["localhost:s2s::SHELL","server1:s2s::SHELL","hpc_server:s2s::SGE_CUSTOM",]
+JOB_QUEUS        = {"SGE_CUSTOM":sge_custom}
+
+jobs=pyjobs(
+    environments = JOB_ENVIRONMENTS,
+    job_queus = JOB_QUEUS,
+    )
 ```
 
 - Show job list
+
+```python
+jobs.show()
+```
+
+For details
 ```python
 jobs.show(depth=1,no_update=False)
 ```
+.
 
 - Assign a job to the `jobs` instance later
 ```python
-jobs[3059261]=pyjob(jobid="3059261",jobname="s2o.sh",jobfile=`cat s2o.sh`)
+jobs[3059261]=pyjob(jobid="3059261",jobname="s2s.sh",jobfile=`cat s2s.sh`)
 #jobs.dump()
 ```
 
@@ -52,7 +144,6 @@ jobs.bye(-1)
 ```
 
 - shell support with ssh
-
 
 ```python
 def shellrun(commandline,server,cd,ssh_bash_profile=True,nohup=False)

@@ -1,3 +1,14 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
+# Author: Shuhei Kurita
+# Mailto: kurita@nlp.ist.i.kyoto-u.ac.jp
+# Licence: GPL v2
+
+from __future__ import absolute_import
+from __future__ import unicode_literals
+
+
 # Util functions that are for running process from python and independent from pyraiden
 
 import subprocess,os

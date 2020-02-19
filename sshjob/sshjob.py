@@ -1,14 +1,17 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
+
+# Author: Shuhei Kurita
+# Mailto: kurita@nlp.ist.i.kyoto-u.ac.jp
+# Licence: GPL v2
+
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-import subprocess
 import datetime
 #from datetime import datetime, timedelta, timezone
 import re
 import json
-import os
 from time import sleep
 
 from collections import OrderedDict
@@ -17,22 +20,22 @@ from sshjob.shell_runs import *
 from sshjob.job_queues import *
 
 from os.path import expanduser
-pyraiden_home=expanduser("~")
-#pyraiden_base=os.path.join(pyraiden_home,"repos/pyraiden/")
+#pyraiden_home=expanduser("~")
 pyraiden_base=""
-pyraiden_log="pyraiden_log/"
+#pyraiden_log="pyraiden_log/"
 
 require_files=["header_basic.sh","header_cpu.sh", "header_gpu.sh","footer.sh"]
 
 DEFAULT_JOB_QUEUE={"SGE_DEFAULT":sge_default, "SHELL":shell}
 
-class sshjob(OrderedDict):
+class pyjobs(OrderedDict):
     #def __init__(self,basedir="."):
     def __init__(self,
                  environments=[":::SHELL"],
                  job_queues={},
                  file=None):
         #self.basedir=basedir
+        super(pyjobs, self).__init__()
         for req in require_files:
             if not os.path.isfile(req):
                 open(req,"w").write("")
@@ -74,7 +77,7 @@ class sshjob(OrderedDict):
         else:
             expand = json.load(open(self.file,"r"))
         if not merge:
-            super(sshjob, self).clear()
+            super(pyjobs, self).clear()
             #super().__init__(expand["jobs"])
         else:
             #super().merge(OrderedDict(expand["jobs"]))
@@ -123,7 +126,7 @@ class sshjob(OrderedDict):
 
     def show_job_queue(self):
         list_job_queues = [name for name,func in self.job_queues.items()]
-        print("We recognize %d job queues of : %s"%(len(self.job_queues)," ".join(list_job_queues)))
+        print("We recognize %d job queues of : %s"%(len(self.job_queues),", ".join(list_job_queues)))
 
     #def __setitem__(self, key, value):
     #    if isinstance(key, str):
@@ -497,7 +500,7 @@ class sshjob(OrderedDict):
         for jobid,info in self.items():
             raise NotImplemented
             self.trash(info,server=ssh,cd=sshdir)
-        super(sshjob, self).clear()
+        super(pyjobs, self).clear()
         if save:
             self.dump()
 
@@ -729,7 +732,7 @@ def get_datetime():
     return datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')[2:-4]
 
 def help():
-    print("jobs = sshjob()")
+    print("jobs = pyjobs()")
     print("jobs.qsub()")
     print("jobs.show()")
     print()
