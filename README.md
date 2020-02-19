@@ -1,6 +1,6 @@
 # Sshjob
 
-## Free from shellscripts that generate shellscripts on HPC
+## Free from shellscripts that generate other shellscripts on HPC
 
 A Python-based and jupyter-friendly job management system for remote serevers and HPC job management systems.
 
@@ -15,7 +15,7 @@ Sshjob provides easy and sophisticated way to access your servers, HPC clusters 
 
 ## Install
 ```bash
-pip install sshrun
+pip install sshjob
 ```
 
 ## Usage
