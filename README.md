@@ -28,9 +28,9 @@ On python, run
 from sshjob import *
 jobs=pyjobs()
 ```
-to initialize `pyjobs` instance of pyjobs. Here `jobs` is a sub-class of the ordered dictionary.
+to initialize a `pyjobs` instance. `pyjobs` is a sub-class of the ordered dictionary.
 
-`pyjobs` instance is used to manage your jobs on a specific remote (or local) machine.
+`pyjobs` is used to manage your jobs on a specific remote (or local) machine.
 `jobs.qsub()`
 `jobs.show()`
 `jobs.kill()`
@@ -39,19 +39,22 @@ to initialize `pyjobs` instance of pyjobs. Here `jobs` is a sub-class of the ord
 
 ### Run jobs on remote shell
 
-This is ax example to create a shellfile of `run.sh`, transfer the shellfile to `server1:~/s2s/run.sh` and execute it with `nohup`.
+This is an example to create and run a shellfile of `run.sh` on `server1:~/s2s` with `nohup`.
 ```python
 from sshjob import *
-jobs=pyjobs("server1:~/s2s::SHELL")
+jobs=pyjobs("server1:s2s::SHELL")
 gpu=0
+
 shell_file="""
 cd $HOME/s2s
 GPU=%d
 CUDA_VISIBLE_DEVICES=$GPU python s2s.sh
 """%gpu
 jobs.qsub(shell_file,"run.sh",jc="")
-```
 
+jobs.show() # check if running
+```
+This creat a new file of `run.sh`, transfer (`scp`) it to a remote directory of `server1:~/s2s`, and execute it on remote bash with `nohup`.
 The new shell file of `run.sh` is
 ```bash
 # (header)
@@ -60,37 +63,40 @@ GPU=0
 CUDA_VISIBLE_DEVICES=$GPU python s2s.sh
 # (footer)
 ```
-. The header is important for grid engines of HPC and specified in `jc=""` of qsub function.
+. The header is important for grid engines of HPC and specified in `jc="..."` of the input for qsub function.
 
-You can specify the port number (ex. 12345) such as
+You can specify the port number (ex. 12345) for server2 such as
 ```python
 from sshjob import *
-jobs=pyjobs("localhost:s2s:12345:SHELL")
+jobs=pyjobs("server2:s2s:12345:SHELL")
 gpu=0
 shell_file="""
 cd $HOME/s2s
 GPU=%d
-CUDA_VISIBLE_DEVICES= python s2s.sh
+CUDA_VISIBLE_DEVICES=$GPU python s2s.sh
 """%gpu
-jobs.qsub(shell_file,"run.sh",jc="+gpu,g1,72h")
+jobs.qsub(shell_file,"run.sh")
 ```
+This use ssh of `ssh -p 12345 server2` background.
 
 ### Run jobs on remote HPC
 
 For HPC with a SGE job shceduler,
 ```python
 from sshjob import *
-jobs=pyjobs("localhost:s2s:12345:SHELL")
-gpu=0
+jobs=pyjobs("hpc_login:s2s::SGE_DEFAULT")
+
 shell_file="""
 cd $HOME/s2s
-GPU=%d
-CUDA_VISIBLE_DEVICES= python s2s.sh
-"""%gpu
+source your_hpc_settings.sh
+python s2s.sh
+"""
 jobs.qsub(shell_file,"run.sh",jc="+gpu,g1,72h")
+jobs.show()
 ```
-. Since job scheduler engines have many dialogs, you need to manually define an job_queues function for many cases.
+. We assume the job schduler is on `hpc_login` that can be reached directly via `ssh`.
 
+Since job scheduler engines have many dialogs, you need to manually define an job_queues function for many cases:
 ```python
 
 def sge_custom(short,jc=None,docker=""):
@@ -120,16 +126,13 @@ def sge_custom(short,jc=None,docker=""):
         "#$ -cwd",
     ]
     return result,docker
-
-def shell(short,docker=""):
-    return ["#localhost"],docker
     
 JOB_ENVIRONMENTS = ["localhost:s2s::SHELL","server1:s2s::SHELL","hpc_server:s2s::SGE_CUSTOM",]
 JOB_QUEUS        = {"SGE_CUSTOM":sge_custom}
 
 jobs=pyjobs(
     environments = JOB_ENVIRONMENTS,
-    job_queus = JOB_QUEUS,
+    job_queus    = JOB_QUEUS,
     )
 ```
 
