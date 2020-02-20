@@ -283,51 +283,53 @@ class pyjobs(OrderedDict):
                     commandline.append(str(hqw))
             commandline.append(shellname)
 
-            if "#localhost" in jc:
+            if n>=1:
+                print("[SSHJOB] Command Line:")
+                print("[SSHJOB]"," ".join(commandline))
+
+            if n>=2: # test
+                print("[SSHJOB] We created (and sent if needed) a shell script file of *** "+shellname+" ***, but didn't run it.")
+            elif "#localhost" in jc:
                 jobid=int(get_datetime())
                 commandline.append( ">"+shellname+".o"+str(jobid))
                 commandline.append("2>"+shellname+".e"+str(jobid))
 
                 pid,res = shell_nohup(commandline,server=ssh,cd=sshdir)
-                #commandline=" ".join(commandline)
-                #TEMP_SSHJOB_FILE="__temp.pyraiden__"
-                #commandline+="  & \n echo $! >"+TEMP_SSHJOB_FILE
-                #print(commandline)
-                #res=os.system(commandline)
-                #pid=int(open(TEMP_SSHJOB_FILE,"r").read().strip())
-                #os.system("rm "+TEMP_SSHJOB_FILE)
-                self[jobid]={"qsub":str(res),"jobid":str(jobid),"pid":str(pid),
-                        "jobname":shellname,"state":"",
-                        "jc":jc,"startat":now, "git":git_state,
-                        "jobfile":shellfile,
-                             } # res,state
-            elif n>=2: # test
-                print("We create shellfile of *** "+shellname+" *** but do not run it.")
-            elif n==1: # test           res2 = parse_qsub_output(res)
-                print("[SSHJOB command line]"," ".join(commandline))
-                res = shell_run(commandline,server=ssh,cd=sshdir)
                 try:
-                    res = parse_qsub_output(res)
-                    jobid=int(res["jobid"])
-                    print("qsub: [Job Number] : [Job ID] = %4d : %d"%(len(self),jobid))
-                    newface=pyjob(**{"qsub":res,"jobid":res["jobid"],
-                            "jobname":shellname,"state":"",
-                            "jc":jc,"startat":now, "git":git_state,
+                    #commandline=" ".join(commandline)
+                    #TEMP_PYRAIDEN_FILE="__temp.pyraiden__"
+                    #commandline+="  & \n echo $! >"+TEMP_PYRAIDEN_FILE
+                    #print(commandline)
+                    #res=os.system(commandline)
+                    #pid=int(open(TEMP_PYRAIDEN_FILE,"r").read().strip())
+                    #os.system("rm "+TEMP_PYRAIDEN_FILE)
+                    print("[SSHJOB] shell: [Job Number] : [Process ID] = %4d :"%(len(self)),pid)
+                    self[jobid]={"qsub":str(res), "jobid":str(jobid), "pid":str(pid),
+                            "jobname":shellname, "state":"",
+                            "jc":jc, "startat":now, "git":git_state,
                             "jobfile":shellfile,
-                                 }) # res,state
-                    self[jobid]=newface
+                                 } # res,state
+                    assert int(pid)>0
                 except:
-                    print("[SSHJOB] Cannot find jobid",shellname)
-                    print("[SSHJOB] qsub says: ",res)
+                    print("[SSHJOB] Cannot find a new process ID of",shellname)
+                    print("[SSHJOB] shell says: ",res)
+                    print("[SSHJOB] This does NOT ALWAYS mean that a new job is NOT running. Just we cannot track the new process id.")
+                    repr = {"qsub":str(res), "jobid":str(jobid), "pid":"PID_HERE (string)",
+                                 "jobname":shellname, "state":"",
+                                 "jc":jc, "startat":now, "git":git_state,
+                                 "jobfile":shellfile,
+                                 }.__repr__()
+                    print("[SSHJOB] If the new job is sucessfully running, you can manually add it to pyjobs as:")
+                    print("[SSHJOB] jobs[%s] = %s"%(jobid,repr))
             else:
                 res = shell_run(commandline,server=ssh,cd=sshdir)
                 try:
                     res = parse_qsub_output(res)
                     jobid=int(res["jobid"])
                     print("qsub: [Job Number] : [Job ID] = %4d : %d"%(len(self),jobid))
-                    self[jobid]=pyjob(**{"qsub":res,"jobid":res["jobid"],
-                            "jobname":shellname,"state":"",
-                            "jc":jc,"startat":now, "git":git_state,
+                    self[jobid]=pyjob(**{"qsub":res, "jobid":res["jobid"],
+                            "jobname":shellname, "state":"",
+                            "jc":jc, "startat":now, "git":git_state,
                             "jobfile":shellfile,
                                  }) # res,state
                     #try:
@@ -337,8 +339,16 @@ class pyjobs(OrderedDict):
                     #except:
                     #    print("Cannot save joblog",shellname)
                 except:
-                    print("Cannot find jobid",shellname)
+                    print("[SSHJOB] Cannot find a new job id of",shellname)
                     print("[SSHJOB] qsub says: ",res)
+                    print("[SSHJOB] This does NOT ALWAYS mean that a new job is NOT running. Just we cannot track the new job id.")
+                    repr = {"qsub":res,"jobid":"JOB_ID_HERE (string)",
+                                         "jobname":shellname,"state":"",
+                                         "jc":jc, "startat":now, "git":git_state,
+                                         "jobfile":shellfile,
+                                         }.__repr__()
+                    print("[SSHJOB] If the new job is sucessfully running, you can manually add it to pyjobs as:")
+                    print("[SSHJOB] jobs[JOB_ID (int)] = %s"%repr)
         self.dump()
 
     def shell_run(self,commandline,system=None,ssh_bash_profile=True):
