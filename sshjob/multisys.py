@@ -21,9 +21,6 @@ from sshjob.job_queues import *
 from sshjob.sshjob import *
 
 class sshjob(OrderedDict):
-    @staticmethod
-    def version():
-        return '0.1.1'
     def __init__(self,
                  envs={"local":":::SHELL"},
                  job_queues={"SHELL":shell},
