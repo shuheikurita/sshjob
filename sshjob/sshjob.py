@@ -30,7 +30,7 @@ DEFAULT_JOB_QUEUE={"SGE_DEFAULT":sge_default, "SHELL":shell}
 class sshjobsys(OrderedDict):
     @staticmethod
     def version():
-        return "0.0.dev18"
+        return "0.0.dev20"
     def __init__(self,
                  environment=":::SHELL",
                  job_queues={"SHELL":shell},
@@ -389,13 +389,13 @@ class sshjobsys(OrderedDict):
         else:
             return self[key]["jobfile"].split("\n")
 
-    def stdout(self,key,line=20,pattern=None):
+    def stdout(self,key,line=20,grep=None,pattern=None):
         jid = self.get_jid_from_key(key)
         info = self[jid]
         jobname = info["jobname"]
         fno=jobname+".o"+info["jobid"]
         print('*** stdout file: %s'%fno)
-        if line<0 or pattern:
+        if line<0 or pattern or grep:
             com="""
              cat %s ;
             """%(fno)
@@ -404,19 +404,22 @@ class sshjobsys(OrderedDict):
              tail -n %d %s ;
             """%(line,fno)
         res = self.shell_run(com,ssh_bash_profile=False)
-        if pattern:
+        if grep:
+            assert isinstance(grep,str)
+            return "\n".join([l for l in res["stdout"].split("\n") if grep in l])
+        elif pattern:
             p=re.compile(pattern)
-            "\n".join([l for l in res["stdout"].split("\n") if re.match(p,l)])
+            return "\n".join([l for l in res["stdout"].split("\n") if re.match(p,l)])
         else:
             return res["stdout"]
 
-    def stderr(self,key,line=20,pattern=None):
+    def stderr(self,key,line=20,grep=None,pattern=None):
         jid = self.get_jid_from_key(key)
         info = self[jid]
         jobname = info["jobname"]
         fne=jobname+".e"+info["jobid"]
         print('*** stderr file: %s'%fne)
-        if line<0 or pattern:
+        if line<0 or pattern or grep:
             com="""
              cat %s ;
             """%(fne)
@@ -425,9 +428,12 @@ class sshjobsys(OrderedDict):
              tail -n %d %s ;
             """%(line,fne)
         res = self.shell_run(com,ssh_bash_profile=False)
-        if pattern:
+        if grep:
+            assert isinstance(grep,str)
+            return "\n".join([l for l in res["stdout"].split("\n") if grep in l])
+        elif pattern:
             p=re.compile(pattern)
-            "\n".join([l for l in res["stdout"].split("\n") if re.match(p,l)])
+            return "\n".join([l for l in res["stdout"].split("\n") if re.match(p,l)])
         else:
             return res["stdout"]
 
