@@ -42,7 +42,7 @@ to initialize a `pyjobs` instance. `pyjobs` is a sub-class of the ordered dictio
 This is an example to create and run a shellfile of `run.sh` on `server1:~/s2s` with `nohup`.
 ```python
 from sshjob import *
-jobs=pyjobs("server1:s2s::SHELL")
+jobs=sshjobsys("server1:s2s::SHELL")
 gpu=0
 
 shell_file="""

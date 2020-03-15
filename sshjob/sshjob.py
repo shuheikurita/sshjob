@@ -28,24 +28,23 @@ require_files=["header_basic.sh","header_cpu.sh", "header_gpu.sh","footer.sh"]
 
 DEFAULT_JOB_QUEUE={"SGE_DEFAULT":sge_default, "SHELL":shell}
 
-class pyjobs(OrderedDict):
+class sshjob(OrderedDict):
     @staticmethod
     def version():
-        return '0.0.dev11'
-
-    #def __init__(self,basedir="."):
+        return '0.1.0.dev0'
     def __init__(self,
-                 environments=[":::SHELL"],
-                 job_queues={},
+                 envs={"local":":::SHELL"},
+                 job_queues={"SHELL":shell},
                  file=None):
-        #self.basedir=basedir
-        super(pyjobs, self).__init__()
-        for req in require_files:
-            if not os.path.isfile(req):
-                open(req,"w").write("")
+        super(sshjob, self).__init__()
+        assert isinstance(envs,dict)
+        assert isinstance(job_queues,dict)
+        for label,env in envs.items():
+            self[label]=sshjobsys(env,job_queues)
+        self.job_queues = job_queues
         if file:
             self.load(file)
-        else:
+        elif file=="":
             if file:
                 self.load(file)
                 print("[SSHJOB] load from "+self.file)
@@ -60,12 +59,105 @@ class pyjobs(OrderedDict):
                         break
                 else:
                     raise NameError("[SSHJOB] TOO MANY FILES")
-        self.environments = [environments] if isinstance(environments,str) else environments
         self.job_queues = DEFAULT_JOB_QUEUE
         self.add_job_queue(job_queues)
 
+    def __dict__(self):
+        expand={"file":self.file, "sshjob":{}}
+        for label,jobsys in self.items():
+            if isinstance(label,str):
+                expand["sshjob"][label]=jobsys.__dict__
+        return {"sshjob":expand}
+    def show(self,**kwargs):
+        for label,jobsys in self.items():
+            if isinstance(label,str):
+                print("# "+label)
+                jobsys.show(**kwargs)
+    def qsub(self,env,**kwargs):
+        if env not in self:
+            print("env="+env+" not found.")
+        else:
+            self[env].qsub(**kwargs)
+
+    def dump(self,path):
+        json.dump(self.__dict__(),open(path,"w"))
+    def loads(self,expand,merge=False):
+        if "sshjob" in expand:
+            if not merge:
+                super(OrderedDict, self).clear()
+            self.job_queues += expand["job_queues"]
+            for label,env in expand["jobs"].items():
+                self[label]=sshjobsys(env["environment"],self.job_queues)
+                self[label].load_from_dict(expand)
+            return True
+        elif "jobs" in expand:
+            print("[SSHJOB] Seems not a sshjobsys dump.")
+            print("[SSHJOB] Use sshjobsys() instead.")
+            return False
+        else:
+            print("[SSHJOB] Seems not a sshjob nor sshjobsys dump.")
+            return False
+
+    def load(self,path=None,merge=False):
+        if path:
+            expand = json.load(open(path,"r"))
+        else:
+            expand = json.load(open(self.file,"r"))
+        if self.loads(expand, merge):
+            if path:
+                self.file=path
+                print("[SSHJOB] Save to",self.file)
+                print("[SSHJOB] For loading, use:  jobs.load(\"%s\")"%self.file)
+            else:
+                self.file=expand["file"]
+
+    def add_job_queue(self,job_queues={}):
+        self.job_queues.update(job_queues)
+        self.show_job_queue()
+
+    def show_job_queue(self):
+        list_job_queues = [name for name,func in self.job_queues.items()]
+        print("[SSHJOB] We recognize %d job queues of : %s"%(len(self.job_queues),", ".join(list_job_queues)))
+
+
+class sshjobsys(OrderedDict):
+    def __init__(self,
+                 environment=":::SHELL",
+                 job_queues={"SHELL":shell},
+                 file=""):
+        #self.basedir=basedir
+        super(sshjobsys, self).__init__()
+        assert isinstance(environment,str)
+        assert isinstance(job_queues,dict)
+        for req in require_files:
+            if not os.path.isfile(req):
+                open(req,"w").write("")
+        if file:
+            self.load(file)
+        elif file=="":
+            if file:
+                self.load(file)
+                print("[SSHJOB] load from "+self.file)
+            else:
+                date=datetime.datetime.today().strftime("%Y%m%d")[2:]
+                file = "pyjobs"+"."+date
+                for i in range(100):
+                    if not os.path.isfile(file+".%02d"%i):
+                        self.file = file+".%02d"%i
+                        print("[SSHJOB] Save to",self.file)
+                        print("[SSHJOB] For loading, use:  jobs.load(\"%s\")"%self.file)
+                        break
+                else:
+                    raise NameError("[SSHJOB] TOO MANY FILES")
+        self.environment = environment
+        self.job_queues = DEFAULT_JOB_QUEUE
+        self.add_job_queue(job_queues)
+
+    def __dict__(self):
+        return self.dumps(to_str=False)
+
     def dumps(self,to_str=True):
-        expand={"environments":self.environments, "file":self.file, "jobs":self}
+        expand={"environment":self.environment, "file":self.file, "jobs":self}
         if to_str:
             return json.dumps(expand)
         else:
@@ -76,29 +168,34 @@ class pyjobs(OrderedDict):
             json.dump(expand,open(path,"w"))
         else:
             json.dump(expand,open(self.file,"w"))
+    def load_from_dict(self,expand,merge=False):
+        if "jobs" not in expand:
+            print("[SSHJOB] Seems not a sshjobsys dump.")
+            return False
+        if not merge:
+            super(sshjobsys, self).clear()
+        for jobid,jobname in expand["jobs"].items():
+            self[jobid]=pyjob(**jobname)
+        # "environments" for compatibility
+        self.environment = expand["environment"] if "environment" in expand else \
+            expand["environments"] if "environments" in expand else \
+                [":::SHELL"]
+        return True
     def load(self,path=None,merge=False):
         if path:
             expand = json.load(open(path,"r"))
         else:
             expand = json.load(open(self.file,"r"))
-        if not merge:
-            super(pyjobs, self).clear()
-            #super().__init__(expand["jobs"])
-        else:
-            #super().merge(OrderedDict(expand["jobs"]))
-            pass
-        for jobid,jobname in expand["jobs"].items():
-            self[jobid]=pyjob(**jobname)
-        if path:
-            self.file=path
-            print("[SSHJOB] Save to",self.file)
-            print("[SSHJOB] For loading, use:  jobs.load(\"%s\")"%self.file)
-        else:
-            self.file=expand["file"]
-        self.environments = expand["environments"] if "environments" in expand else [":::SHELL"]
+        if self.load_from_dict(expand, merge):
+            if path:
+                self.file=path
+                print("[SSHJOB] Save to",self.file)
+                print("[SSHJOB] For loading, use:  jobs.load(\"%s\")"%self.file)
+            else:
+                self.file=expand["file"]
 
     def show(self,system=None,depth=0,no_update=False,search=[]):
-        system = system if system is not None else self.environments[0]
+        system = system if system is not None else self.environment
         system = system.split(":")
         searches = [search] if isinstance(search,str) else search
         if not no_update:
@@ -218,13 +315,11 @@ class pyjobs(OrderedDict):
             hqw=None,
             n=0,
             range=[0],
-            system=None,
             qsuboption=[],
             git=False,
              ):
 
-        system = system if system is not None else self.environments[0]
-        system = system.split(":")
+        system = self.environment.split(":")
         ssh    = None if len(system[0])==0 else system[0]
         sshdir = None if len(system[1])==0 else system[1]
 
@@ -474,13 +569,13 @@ class pyjobs(OrderedDict):
                     info["state"]=state
                 else:
                     print("Unknown job state: ",state)
-        return {"raiden":self,
-                    "wait":wait,
-                    "fail_to_run":fail_to_run,
-                    "start":start,
-                    "run":run,
-                    "finishing":finishing,
-                    "finish":finish}
+        return {\
+               "wait":wait,
+               "fail_to_run":fail_to_run,
+               "start":start,
+               "run":run,
+               "finishing":finishing,
+               "finish":finish}
 
     # Delete item from OrderedDict
     def disown(self,keys):
@@ -490,55 +585,45 @@ class pyjobs(OrderedDict):
             del self[jid]
 
     # Stop job
-    def kill(self,keys,system=None,debug=0):
-        system = system if system is not None else self.environments[0]
-        system = system.split(":")
+    def kill(self,keys,debug=0):
+        system = self.environment.split(":")
         ssh    = None if len(system[0])==0 else system[0]
         for key in self.get_jid_from_keys(keys):
             kill(self[key],server=ssh,debug=debug)
 
-    def kill_all(self,system=None,debug=0):
-        system = system if system is not None else self.environments[0]
-        system = system.split(":")
+    def kill_all(self,debug=0):
+        system = self.environment.split(":")
         ssh    = None if len(system[0])==0 else system[0]
         for jobid,info in self.items():
             kill(info,server=ssh,debug=debug)
 
     # Delete job log files
-    def rm(self,keys,save=True,system=None):
-        system = system if system is not None else self.environments[0]
-        system = system.split(":")
+    def rm(self,keys,save=True):
+        system = self.environment.split(":")
         ssh    = None if len(system[0])==0 else system[0]
         sshdir = None if len(system[1])==0 else system[1]
         jidx = self.get_jid_from_keys(keys)
         print("Job IDs: ",jidx)
         self.trash(jidx,server=ssh,cd=sshdir)
+        # TODO: do not disown when trashing fail.
         self.disown(jidx)
         if save:
             self.dump()
 
     def rm_all(self,save=False,system=None):
-        system = system if system is not None else self.environments[0]
-        system = system.split(":")
-        ssh    = None if len(system[0])==0 else system[0]
-        sshdir = None if len(system[1])==0 else system[1]
-        for jobid,info in self.items():
-            raise NotImplemented
-            self.trash(info,server=ssh,cd=sshdir)
-        super(pyjobs, self).clear()
-        if save:
-            self.dump()
+        self.rm(keys=self.keys())
+        super(sshjobsys, self).clear()
 
     # Stop and Delete job log files
-    def bye(self,keys,save=True,system=None):
+    def bye(self,keys,save=True):
         jidx = self.get_jid_from_keys(keys)
         print("Job IDs: ",jidx)
         for key in jidx:
-            self.kill(key,system=system)
+            self.kill(key)
         print("[SSHJOB] Wait 2 seconds...")
         sleep(2)
         for key in jidx:
-            self.rm(key,save=save,system=system)
+            self.rm(key,save=save)
 
     def trash(self,keys,force=False,server=None,cd=None):
         jidx = self.get_jid_from_keys(keys)
@@ -563,11 +648,9 @@ class pyjobs(OrderedDict):
 
     # A function that check the remote environment works
     def check_env(self,system=None):
-
-        system = system if system is not None else self.environments[0]
-        system_ = system.split(":")
-        ssh    = None if len(system_[0])==0 else system_[0]
-        sshdir = None if len(system_[1])==0 else system_[1]
+        system = self.environment.split(":")
+        ssh    = None if len(system[0])==0 else system[0]
+        sshdir = None if len(system[1])==0 else system[1]
 
         res = shell_run("""if [ -d %s ]; then echo "SUCCESS"; fi"""%sshdir,server=ssh,cd=".")
         if "SUCCESS" in res["stdout"]:
@@ -577,11 +660,9 @@ class pyjobs(OrderedDict):
 
     # A function to init the remote environment
     def init_env(self,system=None):
-
-        system = system if system is not None else self.environments[0]
-        system_ = system.split(":")
-        ssh    = None if len(system_[0])==0 else system_[0]
-        sshdir = None if len(system_[1])==0 else system_[1]
+        system = self.environment.split(":")
+        ssh    = None if len(system[0])==0 else system[0]
+        sshdir = None if len(system[1])==0 else system[1]
 
         if self.check_env(system=system) != 0:
             print("Initialing...")
@@ -609,10 +690,6 @@ class pyjob(dict):
                           "jobfile":jobfile,
                           "pid":str(pid) if pid is not None else None,
                                  })
-    def track(self): pass
-    def kill(self): pass
-    def rm(self): pass
-
 # qsub
 
 def parse_qsub_output(res):
@@ -765,10 +842,6 @@ def help():
     print("jobtype: +gpu,8g,3d -> +g8 7d")
     print()
     print("See https://github.com/shuheikurita/sshjob")
-
-def init():
-    pyjobs()
-    help()
 
 if __name__ == '__main__':
     help()
