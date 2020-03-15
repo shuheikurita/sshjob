@@ -31,7 +31,7 @@ DEFAULT_JOB_QUEUE={"SGE_DEFAULT":sge_default, "SHELL":shell}
 class pyjobs(OrderedDict):
     @staticmethod
     def version():
-        return '0.0.dev10'
+        return '0.0.dev11'
 
     #def __init__(self,basedir="."):
     def __init__(self,
@@ -219,7 +219,9 @@ class pyjobs(OrderedDict):
             n=0,
             range=[0],
             system=None,
-            qsuboption=[]):
+            qsuboption=[],
+            git=False,
+             ):
 
         system = system if system is not None else self.environments[0]
         system = system.split(":")
@@ -244,7 +246,10 @@ class pyjobs(OrderedDict):
         if type(com)==str:
             com=[com]
         now = datetime.datetime.now().isoformat()
-        git_state = get_git_state(server=ssh,cd=sshdir)
+        if git:
+            git_state = get_git_state(server=ssh,cd=sshdir)
+        else:
+            git_state = ""
 
         for i in range:
             ## Create shell file to run
