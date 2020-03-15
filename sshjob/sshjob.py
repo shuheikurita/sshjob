@@ -30,7 +30,7 @@ DEFAULT_JOB_QUEUE={"SGE_DEFAULT":sge_default, "SHELL":shell}
 class sshjobsys(OrderedDict):
     @staticmethod
     def version():
-        return "0.0.dev13"
+        return "0.0.dev15"
     def __init__(self,
                  environment=":::SHELL",
                  job_queues={"SHELL":shell},
@@ -105,18 +105,19 @@ class sshjobsys(OrderedDict):
             else:
                 self.file=expand["file"]
 
-    def show(self,system=None,depth=0,no_update=False,search=[]):
-        system = system if system is not None else self.environment
-        system = system.split(":")
+    def show(self,depth=0,no_update=False,search=[]):
+        system = self.environment.split(":")
         searches = [search] if isinstance(search,str) else search
         if not no_update:
             try:
                 if "SHELL" in system[-1]:
                     self.updating(shellsystem=True,depth=depth-1)
                 else:
-                    self.updating()
-            except:
+                    self.updating(depth=depth-1)
+            except Exception as e:
                 print("Update failed. Use no_update=True")
+                if depth>3:
+                    print(e)
         for i,(jobid,v) in enumerate(self.items()):
             if type(v)==str:
                 print("#%02d"%i,jobid,v)
@@ -436,8 +437,6 @@ class sshjobsys(OrderedDict):
         return check_if_running(pids,pnames,server=ssh,debug=depth)
 
     def updating(self,depth=0,shellsystem=False):
-        system = self.environment
-
         wait=[]
         fail_to_run=[]
         start=[]
@@ -517,13 +516,12 @@ class sshjobsys(OrderedDict):
         sshdir = None if len(system[1])==0 else system[1]
         jidx = self.get_jid_from_keys(keys)
         print("Job IDs: ",jidx)
-        self.trash(jidx,server=ssh,cd=sshdir)
-        # TODO: do not disown when trashing fail.
+        jidx = self.trash(jidx,server=ssh,cd=sshdir)
         self.disown(jidx)
         if save:
             self.dump()
 
-    def rm_all(self,save=False,system=None):
+    def rm_all(self,save=False):
         self.rm(keys=self.keys())
         super(sshjobsys, self).clear()
 
@@ -541,6 +539,7 @@ class sshjobsys(OrderedDict):
     def trash(self,keys,force=False,server=None,cd=None):
         jidx = self.get_jid_from_keys(keys)
         com="mkdir -p trush ; "
+        try_rm=[]
         for jid in jidx:
             info=self[jid]
             jobname=info["jobname"]
@@ -554,13 +553,15 @@ class sshjobsys(OrderedDict):
                 fno=jobname+".o"+info["jobid"]
                 fne=jobname+".e"+info["jobid"]
                 com+="mv %s %s %s trush/ ; "%(jobname,fno,fne)
+                try_rm.append(jid)
             else:
                 print("Cannot trash log files of running job ", jobname)
         res = shell_run(com.split(" "),server=server,cd=cd)
         print(res)
+        return try_rm # TODO: return only if succeed to trash
 
     # A function that check the remote environment works
-    def check_env(self,system=None):
+    def check_env(self):
         system = self.environment.split(":")
         ssh    = None if len(system[0])==0 else system[0]
         sshdir = None if len(system[1])==0 else system[1]
@@ -572,7 +573,7 @@ class sshjobsys(OrderedDict):
         return -1
 
     # A function to init the remote environment
-    def init_env(self,system=None):
+    def init_env(self):
         system = self.environment.split(":")
         ssh    = None if len(system[0])==0 else system[0]
         sshdir = None if len(system[1])==0 else system[1]
