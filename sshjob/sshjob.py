@@ -395,7 +395,7 @@ class sshjobsys(OrderedDict):
         jobname = info["jobname"]
         fno=jobname+".o"+info["jobid"]
         print('*** stdout file: %s'%fno)
-        if line<0:
+        if line<0 or pattern:
             com="""
              cat %s ;
             """%(fno)
@@ -416,7 +416,7 @@ class sshjobsys(OrderedDict):
         jobname = info["jobname"]
         fne=jobname+".e"+info["jobid"]
         print('*** stderr file: %s'%fne)
-        if line<0:
+        if line<0 or pattern:
             com="""
              cat %s ;
             """%(fne)
