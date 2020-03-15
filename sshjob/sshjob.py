@@ -436,12 +436,12 @@ class pyjobs(OrderedDict):
         if shellsystem:
             system_ = system.split(":")
             ssh    = None if len(system_[0])==0 else system_[0]
-            pids = [info["pid"] for jobid,info in raiden.items()]
-            pnames = ["bash "+info["jobname"] for jobid,info in raiden.items()]
+            pids = [info["pid"] for jobid,info in self.items()]
+            pnames = ["bash "+info["jobname"] for jobid,info in self.items()]
             local_stat = check_if_running(pids,pnames,server=ssh,debug=depth)
         else:
             jobstates=self.qstat(system=system,depth=depth)
-        for i,(jobid,info) in enumerate(raiden.items()):
+        for i,(jobid,info) in enumerate(self.items()):
             try:
                 jobid=int(info["jobid"])
             except:
