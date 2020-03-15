@@ -30,7 +30,7 @@ DEFAULT_JOB_QUEUE={"SGE_DEFAULT":sge_default, "SHELL":shell}
 class sshjobsys(OrderedDict):
     @staticmethod
     def version():
-        return "0.0.dev15"
+        return "0.0.dev17"
     def __init__(self,
                  environment=":::SHELL",
                  job_queues={"SHELL":shell},
@@ -389,13 +389,56 @@ class sshjobsys(OrderedDict):
         else:
             return self[key]["jobfile"].split("\n")
 
-    def track(self,key,system=None,line=20):
+    def stdout(self,key,line=20,pattern=None):
+        jid = self.get_jid_from_key(key)
+        info = self[jid]
+        jobname = info["jobname"]
+        fno=jobname+".o"+info["jobid"]
+        print('*** stdout file: %s'%fno)
+        if line<0:
+            com="""
+             cat %s ;
+            """%(fno)
+        else:
+            com="""
+             tail -n %d %s ;
+            """%(line,fno)
+        res = self.shell_run(com,ssh_bash_profile=False)
+        if pattern:
+            p=re.compile(pattern)
+            "\n".join([l for l in res["stdout"].split("\n") if re.match(p,l)])
+        else:
+            return res["stdout"]
+
+    def stderr(self,key,line=20,pattern=None):
+        jid = self.get_jid_from_key(key)
+        info = self[jid]
+        jobname = info["jobname"]
+        fne=jobname+".e"+info["jobid"]
+        print('*** stderr file: %s'%fne)
+        if line<0:
+            com="""
+             cat %s ;
+            """%(fne)
+        else:
+            com="""
+             tail -n %d %s ;
+            """%(line,fne)
+        res = self.shell_run(com,ssh_bash_profile=False)
+        if pattern:
+            p=re.compile(pattern)
+            "\n".join([l for l in res["stdout"].split("\n") if re.match(p,l)])
+        else:
+            return res["stdout"]
+
+    def track(self,key,line=20):
         jid = self.get_jid_from_key(key)
         info = self[jid]
         jobname = info["jobname"]
         fno=jobname+".o"+info["jobid"]
         fne=jobname+".e"+info["jobid"]
-        com=""" echo \'***\' E %s ;
+        com="""
+         echo \'***\' E %s ;
          head -n %d %s ;
          echo -----------------------[SSHJOB]------------------------------- ;
          tail -n %d %s ;
@@ -406,7 +449,30 @@ class sshjobsys(OrderedDict):
          echo -----------------------[SSHJOB]------------------------------- ;
          tail -n %d %s """%(fne,line,fne,line,fne,fno,line,fno,line,fno)
         res = self.shell_run(com,ssh_bash_profile=False)
-        print(res["stdout"])
+        return res["stdout"]
+
+    def stderr_match(self,pattern):
+       jid = self.get_jid_from_key(key)
+       info = self[jid]
+       jobname = info["jobname"]
+       fne=jobname+".e"+info["jobid"]
+       print('*** stderr file: %s'%fne)
+       if line<0:
+           com="""
+            cat %s ;
+           """%(fne)
+       else:
+           com="""
+            tail -n %d %s ;
+           """%(line,fne)
+       res = self.shell_run(com,ssh_bash_profile=False)
+
+       seems_end=0
+           for l in lasts:
+               print(l.strip())
+           if len(lasts)>0:
+               seems_end+=1
+       print("***** Match: ",seems_end,"/",len(raiden),seems_end/len(raiden))
 
     def qstat(self,depth=5):
         qstat = self.shell_run(["qstat"])
@@ -492,7 +558,7 @@ class sshjobsys(OrderedDict):
     # Delete item from OrderedDict
     def disown(self,keys):
         jidx = self.get_jid_from_keys(keys)
-        print("Job IDs: ",jidx)
+        #print("Job IDs: ",jidx)
         for jid in jidx:
             del self[jid]
 
@@ -673,56 +739,6 @@ def kill(infos,local=False,server=None,debug=0):
         raise NotImplemented
     else:
         raise NameError("NotFound: "+infos.__str__())
-
-def track_tail(raiden,n=3,eo="e",updating=True):
-    if eo not in ["e","o"]:
-        print("eo must be e/o")
-    if updating:
-        raiden.updating()
-    seems_end=0
-    for jobname,info in raiden.items():
-        print("***** "+jobname,end="")
-        if info["state"] in ["","qw"]:
-            print(" ...seems not runing")
-            continue
-        else:
-            print()
-        jid=info["jobid"]
-        fne=jobname+"."+eo+info["jobid"]
-        try:
-            lasts=open(fne,"r").readlines()[-n:]
-        except:
-            print("Can't open ",fne)
-            continue
-        for l in lasts:
-            print(l.strip())
-        if len(lasts)>0:
-            if re.search("end",lasts[-1], re.IGNORECASE) != None:
-                seems_end+=1
-    print("***** End: ",seems_end,"/",len(raiden),seems_end/len(raiden))
-
-def track_match(raiden,pattern,eo="e",updating=True):
-    if eo not in ["e","o"]:
-        print("eo must be e/o")
-    p=re.compile(pattern)
-    if updating:
-        raiden.updating()
-    seems_end=0
-    for jobname,info in raiden.items():
-        print("***** "+jobname,end="")
-        if info["state"] in ["","qw"]:
-            print(" ...seems not runing")
-            continue
-        else:
-            print()
-        jid=info["jobid"]
-        fne=jobname+"."+eo+info["jobid"]
-        lasts=[l for l in open(fne,"r").readlines() if re.match(p,l)]
-        for l in lasts:
-            print(l.strip())
-        if len(lasts)>0:
-            seems_end+=1
-    print("***** Match: ",seems_end,"/",len(raiden),seems_end/len(raiden))
 
 def qdel(jobid):
     stop = subprocess.run(["qdel",jobid], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
