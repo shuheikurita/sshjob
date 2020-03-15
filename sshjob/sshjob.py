@@ -109,7 +109,9 @@ class pyjobs(OrderedDict):
             if type(v)==str:
                 print("#%02d"%i,jobid,v)
             else:
-                pid="".join([" " for _ in range(5-len(v["pid"]))])+v["pid"]
+                pid = v["pid"]
+                pid = "NO_PID" if pid is None or pid=="" else str(pid)
+                pid = " "*(6-len(pid))+pid
                 if depth==0:
                     print("*** %02d"%i,jobid,v["state"],v["startat"].replace("T"," "),pid,v["jobname"])
                 else:
@@ -304,11 +306,11 @@ class pyjobs(OrderedDict):
                     #pid=int(open(TEMP_PYRAIDEN_FILE,"r").read().strip())
                     #os.system("rm "+TEMP_PYRAIDEN_FILE)
                     print("[SSHJOB] shell: [Job Number] : [Process ID] = %4d :"%(len(self)),pid)
-                    self[jobid]={"qsub":str(res), "jobid":str(jobid), "pid":str(pid),
+                    self[jobid]=pyjob(**{"qsub":str(res), "jobid":str(jobid), "pid":str(pid),
                             "jobname":shellname, "state":"",
                             "jc":jc, "startat":now, "git":git_state,
                             "jobfile":shellfile,
-                                 } # res,state
+                                 }) # res,state
                     assert int(pid)>0
                 except:
                     print("[SSHJOB] Cannot find a new process ID of",shellname)
@@ -320,7 +322,7 @@ class pyjobs(OrderedDict):
                                  "jobfile":shellfile,
                                  }.__repr__()
                     print("[SSHJOB] If the new job is sucessfully running, you can manually add it to pyjobs as:")
-                    print("[SSHJOB] jobs[%s] = %s"%(jobid,repr))
+                    print("[SSHJOB] jobs[%s] = pyjob(**%s)"%(jobid,repr))
             else:
                 res = shell_run(commandline,server=ssh,cd=sshdir)
                 try:
@@ -348,7 +350,7 @@ class pyjobs(OrderedDict):
                                          "jobfile":shellfile,
                                          }.__repr__()
                     print("[SSHJOB] If the new job is sucessfully running, you can manually add it to pyjobs as:")
-                    print("[SSHJOB] jobs[JOB_ID (int)] = %s"%repr)
+                    print("[SSHJOB] jobs[JOB_ID (int)] = pyjob(**%s)"%repr)
         self.dump()
 
     def shell_run(self,commandline,system=None,ssh_bash_profile=True):
