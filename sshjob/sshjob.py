@@ -31,7 +31,7 @@ DEFAULT_JOB_QUEUE={"SGE_DEFAULT":sge_default, "SHELL":shell}
 class sshjob(OrderedDict):
     @staticmethod
     def version():
-        return '0.1.0.dev0'
+        return '0.1.0'
     def __init__(self,
                  envs={"local":":::SHELL"},
                  job_queues={"SHELL":shell},
@@ -62,6 +62,7 @@ class sshjob(OrderedDict):
         self.job_queues = DEFAULT_JOB_QUEUE
         self.add_job_queue(job_queues)
 
+    @property
     def __dict__(self):
         expand={"file":self.file, "sshjob":{}}
         for label,jobsys in self.items():
@@ -153,6 +154,7 @@ class sshjobsys(OrderedDict):
         self.job_queues = DEFAULT_JOB_QUEUE
         self.add_job_queue(job_queues)
 
+    @property
     def __dict__(self):
         return self.dumps(to_str=False)
 
