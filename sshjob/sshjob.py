@@ -30,7 +30,7 @@ DEFAULT_JOB_QUEUE={"SGE_DEFAULT":sge_default, "SHELL":shell}
 class sshjobsys(OrderedDict):
     @staticmethod
     def version():
-        return "0.0.dev17"
+        return "0.0.dev18"
     def __init__(self,
                  environment=":::SHELL",
                  job_queues={"SHELL":shell},
@@ -450,29 +450,6 @@ class sshjobsys(OrderedDict):
          tail -n %d %s """%(fne,line,fne,line,fne,fno,line,fno,line,fno)
         res = self.shell_run(com,ssh_bash_profile=False)
         return res["stdout"]
-
-    def stderr_match(self,pattern):
-       jid = self.get_jid_from_key(key)
-       info = self[jid]
-       jobname = info["jobname"]
-       fne=jobname+".e"+info["jobid"]
-       print('*** stderr file: %s'%fne)
-       if line<0:
-           com="""
-            cat %s ;
-           """%(fne)
-       else:
-           com="""
-            tail -n %d %s ;
-           """%(line,fne)
-       res = self.shell_run(com,ssh_bash_profile=False)
-
-       seems_end=0
-           for l in lasts:
-               print(l.strip())
-           if len(lasts)>0:
-               seems_end+=1
-       print("***** Match: ",seems_end,"/",len(raiden),seems_end/len(raiden))
 
     def qstat(self,depth=5):
         qstat = self.shell_run(["qstat"])
