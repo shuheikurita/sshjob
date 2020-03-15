@@ -97,7 +97,7 @@ class pyjobs(OrderedDict):
             self.file=expand["file"]
         self.environments = expand["environments"] if "environments" in expand else [":::SHELL"]
 
-    def show(self,system=None,depth=1,no_update=False,search=[]):
+    def show(self,system=None,depth=0,no_update=False,search=[]):
         system = system if system is not None else self.environments[0]
         system = system.split(":")
         searches = [search] if isinstance(search,str) else search
@@ -118,9 +118,12 @@ class pyjobs(OrderedDict):
                 pid = " "*(6-len(pid))+pid
                 if depth==0:
                     print("*** %02d"%i,jobid,v["state"],v["startat"].replace("T"," "),pid,v["jobname"])
-                else:
-                    print("*** %02d"%i,jobid,v["state"],v["startat"].replace("T"," "),pid,v["jobname"], v["git"] if "git" in v else "")
-                if depth>1:
+                elif depth==1:
+                    git = v["git"] if "git" in v else ""
+                    NO_GIT="fatal: Not a git repository"
+                    git = "NO_GIT" if git[:len(NO_GIT)]==NO_GIT else git
+                    print("*** %02d"%i,jobid,v["state"],v["startat"].replace("T"," "),pid,v["jobname"], git)
+                elif depth>1:
                     print(json.dumps(v))
                 if searches:
                     print(self.jobfile(key=i,searches=searches))
