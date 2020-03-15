@@ -29,6 +29,10 @@ require_files=["header_basic.sh","header_cpu.sh", "header_gpu.sh","footer.sh"]
 DEFAULT_JOB_QUEUE={"SGE_DEFAULT":sge_default, "SHELL":shell}
 
 class pyjobs(OrderedDict):
+    @staticmethod
+    def version():
+        return '0.0.dev10'
+
     #def __init__(self,basedir="."):
     def __init__(self,
                  environments=[":::SHELL"],
