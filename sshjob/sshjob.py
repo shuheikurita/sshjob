@@ -424,7 +424,6 @@ class pyjobs(OrderedDict):
         return jobs
 
     def updating(self,system=None,depth=0,shellsystem=False):
-        raiden=self
         system = system if system is not None else self.environments[0]
 
         wait=[]
@@ -475,7 +474,7 @@ class pyjobs(OrderedDict):
                     info["state"]=state
                 else:
                     print("Unknown job state: ",state)
-        return {"raiden":raiden,
+        return {"raiden":self,
                     "wait":wait,
                     "fail_to_run":fail_to_run,
                     "start":start,
@@ -683,7 +682,7 @@ def track_tail(raiden,n=3,eo="e",updating=True):
     if eo not in ["e","o"]:
         print("eo must be e/o")
     if updating:
-        update(raiden)
+        raiden.updating()
     seems_end=0
     for jobname,info in raiden.items():
         print("***** "+jobname,end="")
@@ -711,7 +710,7 @@ def track_match(raiden,pattern,eo="e",updating=True):
         print("eo must be e/o")
     p=re.compile(pattern)
     if updating:
-        update(raiden)
+        raiden.updating()
     seems_end=0
     for jobname,info in raiden.items():
         print("***** "+jobname,end="")
