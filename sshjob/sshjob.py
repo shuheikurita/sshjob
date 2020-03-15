@@ -30,7 +30,7 @@ DEFAULT_JOB_QUEUE={"SGE_DEFAULT":sge_default, "SHELL":shell}
 class sshjobsys(OrderedDict):
     @staticmethod
     def version():
-        return "0.0.dev12"
+        return "0.0.dev13"
     def __init__(self,
                  environment=":::SHELL",
                  job_queues={"SHELL":shell},
@@ -408,7 +408,7 @@ class sshjobsys(OrderedDict):
         print(res["stdout"])
 
     def qstat(self,depth=5):
-        qstat = self.shell_run(["qstat"], system=self.system)
+        qstat = self.shell_run(["qstat"])
         qlines = qstat["stdout"].strip().split("\n")
         qlines = [line.strip().split() for line in qlines[2:]]
         jobs={}
@@ -428,6 +428,13 @@ class sshjobsys(OrderedDict):
                     print(len(qline))
         return jobs
 
+    def shellstat(self,depth=0):
+        system_ = self.environment.split(":")
+        ssh    = None if len(system_[0])==0 else system_[0]
+        pids = [info["pid"] for jobid,info in self.items()]
+        pnames = ["bash "+info["jobname"] for jobid,info in self.items()]
+        return check_if_running(pids,pnames,server=ssh,debug=depth)
+
     def updating(self,depth=0,shellsystem=False):
         system = self.environment
 
@@ -438,13 +445,9 @@ class sshjobsys(OrderedDict):
         finishing=[]
         finish=[]
         if shellsystem:
-            system_ = system.split(":")
-            ssh    = None if len(system_[0])==0 else system_[0]
-            pids = [info["pid"] for jobid,info in self.items()]
-            pnames = ["bash "+info["jobname"] for jobid,info in self.items()]
-            local_stat = check_if_running(pids,pnames,server=ssh,debug=depth)
+            jobstates=self.shellstat(depth=depth)
         else:
-            jobstates=self.qstat(system=system,depth=depth)
+            jobstates=self.qstat(depth=depth)
         for i,(jobid,info) in enumerate(self.items()):
             try:
                 jobid=int(info["jobid"])
@@ -452,7 +455,7 @@ class sshjobsys(OrderedDict):
                 continue
             jobname=info["jobname"]
             if shellsystem:
-                if local_stat[i]:
+                if jobstates[i]:
                     info["state"]="r"
                     run.append(jobname)
                 else:
@@ -605,7 +608,7 @@ class pyjob(dict):
 
     @property
     def __dict__(self):
-        return self
+        return dict(self)
 
 def parse_qsub_output(res):
     if type(res)!=dict:
