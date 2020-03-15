@@ -180,7 +180,7 @@ class sshjobsys(OrderedDict):
             self[jobid]=pyjob(**jobname)
         # "environments" for compatibility
         self.environment = expand["environment"] if "environment" in expand else \
-            expand["environments"] if "environments" in expand else \
+            expand["environments"][0] if "environments" in expand else \
                 [":::SHELL"]
         return True
     def load(self,path=None,merge=False):
