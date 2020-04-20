@@ -627,11 +627,36 @@ class sshjobsys(OrderedDict):
         ssh    = None if len(system[0])==0 else system[0]
         sshdir = None if len(system[1])==0 else system[1]
 
-        if self.check_env(system=system) != 0:
-            print("Initialing...")
-            res=shell_run("""mkdir -p %s"""%sshdir)
-            self.check_env(system=system)
+        if self.check_env() != 0:
+            print("Initialing an environment of "+self.environment)
+            res=shell_run("""mkdir -p %s"""%sshdir,server=ssh,cd=".")
+            self.check_env()
             return res
+        else:
+            print("Existing an environment of "+self.environment)
+
+    @property
+    def server(self):
+        system = self.environment.split(":")
+        ssh    = None if len(system[0])==0 else system[0]
+        sshdir = None if len(system[1])==0 else system[1]
+        return ssh
+    @property
+    def pwd(self):
+        system = self.environment.split(":")
+        ssh    = None if len(system[0])==0 else system[0]
+        sshdir = None if len(system[1])==0 else system[1]
+        return sshdir
+    def ls(self,lah=False):
+        system = self.environment.split(":")
+        ssh    = None if len(system[0])==0 else system[0]
+        sshdir = None if len(system[1])==0 else system[1]
+        if lah:
+            res=shell_run("""ls -lah"""%sshdir,server=ssh,cd=sshdir)
+        else:
+            res=shell_run("""ls"""%sshdir,server=ssh,cd=sshdir)
+        return res["stdout"]
+
 pyjobs = sshjobsys
 
 class pyjob(dict):
