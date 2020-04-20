@@ -647,14 +647,15 @@ class sshjobsys(OrderedDict):
         ssh    = None if len(system[0])==0 else system[0]
         sshdir = None if len(system[1])==0 else system[1]
         return sshdir
-    def ls(self,lah=False):
+    def ls(self,pwd=".",lah=False):
+        assert isinstance(pwd,str)
         system = self.environment.split(":")
         ssh    = None if len(system[0])==0 else system[0]
         sshdir = None if len(system[1])==0 else system[1]
         if lah:
-            res=shell_run("""ls -lah"""%sshdir,server=ssh,cd=sshdir)
+            res=shell_run("""ls -lah %s"""%pwd,server=ssh,cd=sshdir)
         else:
-            res=shell_run("""ls"""%sshdir,server=ssh,cd=sshdir)
+            res=shell_run("""ls %s"""%pwd,server=ssh,cd=sshdir)
         return res["stdout"]
 
 pyjobs = sshjobsys
