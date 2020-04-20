@@ -561,16 +561,14 @@ class sshjobsys(OrderedDict):
             kill(info,server=ssh,debug=debug)
 
     # Delete job log files
-    def rm(self,keys,save=True):
-        system = self.environment.split(":")
-        ssh    = None if len(system[0])==0 else system[0]
-        sshdir = None if len(system[1])==0 else system[1]
+    def rm(self,keys,save=True, **kwargs):
         jidx = self.get_jid_from_keys(keys)
         print("Job IDs: ",jidx)
-        jidx = self.trash(jidx,server=ssh,cd=sshdir)
+        res = self.trash(jidx, **kwargs)
         self.disown(jidx)
         if save:
             self.dump()
+        return res
 
     def rm_all(self,save=False):
         self.rm(keys=self.keys())
@@ -587,7 +585,7 @@ class sshjobsys(OrderedDict):
         for key in jidx:
             self.rm(key,save=save)
 
-    def trash(self,keys,force=False,server=None,cd=None):
+    def trash(self,keys,force=False, **kwargs):
         jidx = self.get_jid_from_keys(keys)
         com="mkdir -p trush ; "
         try_rm=[]
@@ -608,8 +606,8 @@ class sshjobsys(OrderedDict):
             else:
                 print("Cannot trash log files of running job ", jobname)
         print("[SSHJOB] Try to remove stdout/stderr of "+" ".join(try_rm)+" remotely.")
-        res = self.shell_run(com.split(" "),server=server,cd=cd)
-        return res["stdout"] # TODO: return only if succeed to trash
+        res = self.shell_run(com.split(" "), **kwargs)
+        return res # TODO: return only if succeed to trash
 
     # A function that check the remote environment works
     def check_env(self):
