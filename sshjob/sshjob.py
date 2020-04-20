@@ -47,7 +47,7 @@ class sshjobsys(OrderedDict):
         elif file=="":
             if file:
                 self.load(file)
-                print("[SSHJOB] load from "+self.file)
+                print("[SSHJOB] Load from "+self.file)
             else:
                 date=datetime.datetime.today().strftime("%Y%m%d")[2:]
                 file = "pyjobs"+"."+date
@@ -343,7 +343,7 @@ class sshjobsys(OrderedDict):
                     print("[SSHJOB] If the new job is sucessfully running, you can manually add it to pyjobs as:")
                     print("[SSHJOB] jobs[%s] = pyjob(**%s)"%(jobid,repr))
             else:
-                res = shell_run(commandline,server=ssh,cd=sshdir)
+                res = self.shell_run(commandline,server=ssh,cd=sshdir)
                 try:
                     res = parse_qsub_output(res)
                     jobid=int(res["jobid"])
@@ -372,10 +372,12 @@ class sshjobsys(OrderedDict):
                     print("[SSHJOB] jobs[JOB_ID (int)] = pyjob(**%s)"%repr)
         self.dump()
 
-    def shell_run(self,commandline,ssh_bash_profile=True):
+    def shell_run(self,commandline,server=None,cd=None,ssh_bash_profile=True):
         system = self.environment.split(":")
         ssh    = None if len(system[0])==0 else system[0]
         sshdir = None if len(system[1])==0 else system[1]
+        ssh    = server if server else ssh
+        sshdir = cd     if cd     else sshdir
         return shell_run(commandline,server=ssh,cd=sshdir,ssh_bash_profile=ssh_bash_profile)
 
     def jobfile(self,key,searches=None):
@@ -605,9 +607,9 @@ class sshjobsys(OrderedDict):
                 try_rm.append(jid)
             else:
                 print("Cannot trash log files of running job ", jobname)
-        res = shell_run(com.split(" "),server=server,cd=cd)
-        print(res)
-        return try_rm # TODO: return only if succeed to trash
+        print("[SSHJOB] Try to remove stdout/stderr of "+" ".join(try_rm)+" remotely.")
+        res = self.shell_run(com.split(" "),server=server,cd=cd)
+        return res["stdout"] # TODO: return only if succeed to trash
 
     # A function that check the remote environment works
     def check_env(self):
@@ -615,7 +617,7 @@ class sshjobsys(OrderedDict):
         ssh    = None if len(system[0])==0 else system[0]
         sshdir = None if len(system[1])==0 else system[1]
 
-        res = shell_run("""if [ -d %s ]; then echo "SUCCESS"; fi"""%sshdir,server=ssh,cd=".")
+        res = self.shell_run("""if [ -d %s ]; then echo "SUCCESS"; fi"""%sshdir,server=ssh,cd=".")
         if "SUCCESS" in res["stdout"]:
             print("check_env:SUCCESS")
             return 0
@@ -629,7 +631,7 @@ class sshjobsys(OrderedDict):
 
         if self.check_env() != 0:
             print("Initialing an environment of "+self.environment)
-            res=shell_run("""mkdir -p %s"""%sshdir,server=ssh,cd=".")
+            res=self.shell_run("""mkdir -p %s/trush"""%sshdir,server=ssh,cd=".")
             self.check_env()
             return res
         else:
@@ -653,9 +655,9 @@ class sshjobsys(OrderedDict):
         ssh    = None if len(system[0])==0 else system[0]
         sshdir = None if len(system[1])==0 else system[1]
         if lah:
-            res=shell_run("""ls -lah %s"""%pwd,server=ssh,cd=sshdir)
+            res=self.shell_run("""ls -lah %s"""%pwd)
         else:
-            res=shell_run("""ls %s"""%pwd,server=ssh,cd=sshdir)
+            res=self.shell_run("""ls %s"""%pwd)
         return res["stdout"]
 
 pyjobs = sshjobsys
@@ -737,9 +739,9 @@ def kill(infos,local=False,server=None,debug=0):
             res = kill_dependents(pid,server=server,debug=debug)
         else:
             if debug>9:
-                res = shell_run(["echo",pid],server=server)
+                res = self.shell_run(["echo",pid],server=server)
             else:
-                res = shell_run(["qdel",pid],server=server)
+                res = self.shell_run(["qdel",pid],server=server)
         print(res["stdout"])
     elif isinstance(infos,list):
         for info in infos:
