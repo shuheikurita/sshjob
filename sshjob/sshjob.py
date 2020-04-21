@@ -62,6 +62,7 @@ class sshjobsys(OrderedDict):
         self.environment = environment
         self.job_queues = DEFAULT_JOB_QUEUE
         self.add_job_queue(job_queues)
+        self.res = None
 
     @property
     def __dict__(self):
@@ -378,7 +379,8 @@ class sshjobsys(OrderedDict):
         sshdir = None if len(system[1])==0 else system[1]
         ssh    = server if server else ssh
         sshdir = cd     if cd     else sshdir
-        return shell_run(commandline,server=ssh,cd=sshdir,ssh_bash_profile=ssh_bash_profile)
+        self.res = shell_run(commandline,server=ssh,cd=sshdir,ssh_bash_profile=ssh_bash_profile)
+        return self.res
 
     def jobfile(self,key,searches=None):
         jid = self.get_jid_from_key(key)
@@ -647,15 +649,20 @@ class sshjobsys(OrderedDict):
         ssh    = None if len(system[0])==0 else system[0]
         sshdir = None if len(system[1])==0 else system[1]
         return sshdir
-    def ls(self,pwd=".",lah=False):
+    # AN easy rapper for self.sell_run()
+    def exec(self,commandline, **kwargs):
+        return self.shell_run(commandline, **kwargs)["stdout"]
+    def execp(self,commandline, **kwargs):
+        print(self.shell_run(commandline, **kwargs)["stdout"])
+    def ls(self,pwd=".",lah=False, **kwargs):
         assert isinstance(pwd,str)
         system = self.environment.split(":")
         ssh    = None if len(system[0])==0 else system[0]
         sshdir = None if len(system[1])==0 else system[1]
         if lah:
-            res=self.shell_run("""ls -lah %s"""%pwd)
+            res=self.shell_run("""ls -lah %s"""%pwd, **kwargs)
         else:
-            res=self.shell_run("""ls %s"""%pwd)
+            res=self.shell_run("""ls %s"""%pwd, **kwargs)
         return res["stdout"]
 
 pyjobs = sshjobsys
