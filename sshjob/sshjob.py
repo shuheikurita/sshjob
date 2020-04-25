@@ -607,7 +607,7 @@ class sshjobsys(OrderedDict):
                 try_rm.append(jid)
             else:
                 print("Cannot trash log files of running job ", jobname)
-        print("[SSHJOB] Try to remove stdout/stderr of "+" ".join(try_rm)+" remotely.")
+        print("[SSHJOB] Try to remove stdout/stderr of "+" ".join([str(t) for t in try_rm])+" remotely.")
         res = self.shell_run(com.split(" "), **kwargs)
         return res # TODO: return only if succeed to trash
 
