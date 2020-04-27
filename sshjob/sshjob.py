@@ -489,6 +489,12 @@ class sshjobsys(OrderedDict):
         pnames = ["bash "+info["jobname"] for jobid,info in self.items()]
         return check_if_running(pids,pnames,server=ssh,debug=depth)
 
+    def get_state(jobid,jobstates):
+        jobid=str(jobid)
+        if jobid in jobstates:
+            return jobstates[jobid]["state"]
+        else:
+            return "x"
     def updating(self,depth=0,shellsystem=False):
         wait=[]
         fail_to_run=[]
@@ -514,7 +520,7 @@ class sshjobsys(OrderedDict):
                     info["state"]="d"
                     finish.append(jobname)
             else:
-                state=get_state(jobid,jobstates)
+                state=self.get_state(jobid,jobstates)
                 if state=="x": # not on queue
                     if info["state"]=="":
                         fail_to_run.append(jobname)
@@ -549,18 +555,38 @@ class sshjobsys(OrderedDict):
         for jid in jidx:
             del self[jid]
 
+    def _kill(self,infos,kill_by_pid=False,debug=0):
+        if isinstance(infos,dict) and "jobid" in infos:
+            if "pid" in infos and infos["pid"] is not None:
+                self._kill(int(infos["pid"]),kill_by_pid=True,debug=debug)
+            else:
+                self._kill(int(infos["jobid"]),debug=debug)
+        elif isinstance(infos,int):
+            pid = str(infos)
+            if kill_by_pid:
+                res = kill_dependents(pid,debug=debug)
+            else:
+                if debug>9:
+                    res = self.shell_run(["echo",pid])
+                else:
+                    res = self.shell_run(["qdel",pid])
+            print(res["stdout"])
+        elif isinstance(infos,list):
+            for info in infos:
+                self._kill(info,debug=debug)
+        elif type(infos)==str:
+            raise NotImplemented
+        else:
+            raise NameError("NotFound: "+infos.__str__())
+
     # Stop job
     def kill(self,keys,debug=0):
-        system = self.environment.split(":")
-        ssh    = None if len(system[0])==0 else system[0]
         for key in self.get_jid_from_keys(keys):
-            kill(self[key],server=ssh,debug=debug)
+            self._kill(self[key],debug=debug)
 
-    def kill_all(self,debug=0):
-        system = self.environment.split(":")
-        ssh    = None if len(system[0])==0 else system[0]
+    def killall(self,debug=0):
         for jobid,info in self.items():
-            kill(info,server=ssh,debug=debug)
+            self._kill(info,debug=debug)
 
     # Delete job log files
     def rm(self,keys,save=True, **kwargs):
@@ -572,7 +598,7 @@ class sshjobsys(OrderedDict):
             self.dump()
         return res
 
-    def rm_all(self,save=False):
+    def rmall(self,save=False):
         self.rm(keys=self.keys())
         super(sshjobsys, self).clear()
 
@@ -693,6 +719,7 @@ class pyjob(dict):
     def __dict__(self):
         return dict(self)
 
+# This function needs to be overwritten in some environments.
 def parse_qsub_output(res):
     if type(res)!=dict:
         res=subprocess_res_to_dict(res)
@@ -705,60 +732,6 @@ def parse_qsub_output(res):
     else:
         jid=says[2]
     return {"jobid":jid,"res":res}
-
-## Pyraiden support
-
-def gstat(raiden):
-    gpu_stat(raiden)
-def gpu_stat(raiden):
-    qany("gpu_stat",raiden)
-def qacct(raiden):
-    qany("qacct -j",raiden)
-
-def qany(command,raiden):
-    for jobid,info in raiden.items():
-        if type(jobid)!=int: continue
-        jobname=info["jobname"]
-        res = subprocess.run([command,info["jobid"]], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        print("***** "+jobname,end="")
-        said=res.stdout.decode('utf-8').strip()
-        print(said)
-
-
-def get_state(jobid,jobstates):
-    jobid=str(jobid)
-    if jobid in jobstates:
-        return jobstates[jobid]["state"]
-    else:
-        return "x"
-
-def kill(infos,local=False,server=None,debug=0):
-    if isinstance(infos,dict) and "jobid" in infos:
-        if "pid" in infos and infos["pid"] is not None:
-            kill(int(infos["pid"]),local=True,server=server,debug=debug)
-        else:
-            kill(int(infos["jobid"]),server=server,debug=debug)
-    elif isinstance(infos,int):
-        pid = str(infos)
-        if local:
-            res = kill_dependents(pid,server=server,debug=debug)
-        else:
-            if debug>9:
-                res = self.shell_run(["echo",pid],server=server)
-            else:
-                res = self.shell_run(["qdel",pid],server=server)
-        print(res["stdout"])
-    elif isinstance(infos,list):
-        for info in infos:
-            kill(info,server=server,debug=debug)
-    elif type(infos)==str:
-        raise NotImplemented
-    else:
-        raise NameError("NotFound: "+infos.__str__())
-
-def qdel(jobid):
-    stop = subprocess.run(["qdel",jobid], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    return stop
 
 #def rerun(jobnames,raiden):
 #    jobs=qstat()
