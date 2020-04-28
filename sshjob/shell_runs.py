@@ -69,7 +69,7 @@ def ssh_run(commandline,server,cd,ssh_bash_profile=True,debug=False):
     assert isinstance(commandline,str)
     profile  = " source .bash_profile ;" if ssh_bash_profile else ""
     nohup_pre=nohup_post=""
-    command="ssh %s bash -c \" %s cd %s ;echo __RUN_VIA_SSH__;>&2 echo __RUN_VIA_SSH__; %s %s %s \" "%(server,profile,cd,nohup_pre,commandline,nohup_post)
+    command="ssh -t %s bash -c \" %s cd %s ;echo __RUN_VIA_SSH__;>&2 echo __RUN_VIA_SSH__; %s %s %s \" "%(server,profile,cd,nohup_pre,commandline,nohup_post)
     if debug:
         print("ssh_run:",command)
     res=subprocess.run(command.split(" "), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -87,7 +87,7 @@ def ssh_nohup(shellfile,server,cd,ssh_bash_profile=True):
     profile  = " source .bash_profile " if ssh_bash_profile else ""
     nohup_pre =" nohup bash"
     nohup_post=" </dev/null & \n echo $! "
-    command="ssh %s bash -c ' %s ; cd %s;echo __RUN_VIA_SSH__;>&2 echo __RUN_VIA_SSH__; %s %s %s '"%(server,profile,cd,nohup_pre,commandline,nohup_post)
+    command="ssh -t %s bash -c ' %s ; cd %s;echo __RUN_VIA_SSH__;>&2 echo __RUN_VIA_SSH__; %s %s %s '"%(server,profile,cd,nohup_pre,commandline,nohup_post)
     print(command)
     res=subprocess.run(command.split(" "), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     result=res.__dict__

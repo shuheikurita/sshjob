@@ -30,7 +30,7 @@ DEFAULT_JOB_QUEUE={"SGE_DEFAULT":sge_default, "SHELL":shell}
 class sshjobsys(OrderedDict):
     @staticmethod
     def version():
-        return "0.0.dev30"
+        return "0.0.dev32"
     def __init__(self,
                  environment=":::SHELL",
                  job_queues={"SHELL":shell},
@@ -393,13 +393,17 @@ class sshjobsys(OrderedDict):
         else:
             return self[key]["jobfile"].split("\n")
 
-    def stdout(self,key,line=20,grep=None,pattern=None):
+    def stdout(self,key,line=20,pipe=None,grep=None,pattern=None):
         jid = self.get_jid_from_key(key)
         info = self[jid]
         jobname = info["jobname"]
         fno=jobname+".o"+info["jobid"]
         print('*** stdout file: %s'%fno)
-        if line<0 or pattern or grep:
+        if pipe:
+            com="""
+             cat %s | %s ;
+            """%(fno,pipe)
+        elif line<0 or pattern or grep:
             com="""
              cat %s ;
             """%(fno)
@@ -417,13 +421,17 @@ class sshjobsys(OrderedDict):
         else:
             return res["stdout"]
 
-    def stderr(self,key,line=20,grep=None,pattern=None):
+    def stderr(self,key,line=20,pipe=None,grep=None,pattern=None):
         jid = self.get_jid_from_key(key)
         info = self[jid]
         jobname = info["jobname"]
         fne=jobname+".e"+info["jobid"]
         print('*** stderr file: %s'%fne)
-        if line<0 or pattern or grep:
+        if pipe:
+            com="""
+             cat %s | %s ;
+            """%(fne,pipe)
+        elif line<0 or pattern:
             com="""
              cat %s ;
             """%(fne)
