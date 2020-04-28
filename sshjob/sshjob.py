@@ -30,7 +30,7 @@ DEFAULT_JOB_QUEUE={"SGE_DEFAULT":sge_default, "SHELL":shell}
 class sshjobsys(OrderedDict):
     @staticmethod
     def version():
-        return "0.0.dev33"
+        return "0.0.dev34"
     def __init__(self,
                  environment=":::SHELL",
                  job_queues={"SHELL":shell},
@@ -733,13 +733,14 @@ def parse_qsub_output(res):
         res=subprocess_res_to_dict(res)
     said=res["stdout"]
     #print(said)
-    says=said.split()
-    if says[-1] != "submitted":
+    pattern = '.*Your job (\d+) .*has been submitted.*'
+    result = re.match(pattern, said)
+    if result:
+        jid=result.group(1)
+        return {"jobid":jid,"res":res}
+    else:
         print("NOT SUBMITTED: ",res)
         return {"id":"-1","res":res}
-    else:
-        jid=says[2]
-    return {"jobid":jid,"res":res}
 
 #def rerun(jobnames,raiden):
 #    jobs=qstat()
