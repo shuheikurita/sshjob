@@ -30,7 +30,7 @@ DEFAULT_JOB_QUEUE={"SGE_DEFAULT":sge_default, "SHELL":shell}
 class sshjobsys(OrderedDict):
     @staticmethod
     def version():
-        return "0.0.dev34"
+        return "0.0.dev35"
     def __init__(self,
                  environment=":::SHELL",
                  job_queues={"SHELL":shell},
@@ -345,9 +345,9 @@ class sshjobsys(OrderedDict):
                     print("[SSHJOB] jobs[%s] = pyjob(**%s)"%(jobid,repr))
             else:
                 res = self.shell_run(commandline,server=ssh,cd=sshdir)
-                try:
-                    res = parse_qsub_output(res)
-                    jobid=int(res["jobid"])
+                #try:
+                jobid = int(parse_qsub_output(res["stdout"]))
+                if jobid>0:
                     print("qsub: [Job Number] : [Job ID] = %4d : %d"%(len(self),jobid))
                     self[jobid]=pyjob(**{"qsub":res, "jobid":res["jobid"],
                             "jobname":shellname, "state":"",
@@ -360,7 +360,8 @@ class sshjobsys(OrderedDict):
                     #        open(pyraiden_log_dir+pyraiden_log_prefix+str(jobid),"w").write(json.dumps(raiden[jobid]))
                     #except:
                     #    print("Cannot save joblog",shellname)
-                except:
+                #except:
+                else:
                     print("[SSHJOB] Cannot find a new job id of",shellname)
                     print("[SSHJOB] qsub says: ",res)
                     print("[SSHJOB] This does NOT ALWAYS mean that a new job is NOT running. Just we cannot track the new job id.")
@@ -729,18 +730,15 @@ class pyjob(dict):
 
 # This function needs to be overwritten in some environments.
 def parse_qsub_output(res):
-    if type(res)!=dict:
-        res=subprocess_res_to_dict(res)
-    said=res["stdout"]
-    #print(said)
+    assert isinstance(res,str)
     pattern = '.*Your job (\d+) .*has been submitted.*'
-    result = re.match(pattern, said)
+    result = re.match(pattern, res)
     if result:
         jid=result.group(1)
-        return {"jobid":jid,"res":res}
+        return jid
     else:
-        print("NOT SUBMITTED: ",res)
-        return {"id":"-1","res":res}
+        print("[SSHJOB] NOT SUBMITTED: ",res)
+        return "-1"
 
 #def rerun(jobnames,raiden):
 #    jobs=qstat()
