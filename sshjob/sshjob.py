@@ -30,7 +30,7 @@ DEFAULT_JOB_QUEUE={"SGE_DEFAULT":sge_default, "SHELL":shell}
 class sshjobsys(OrderedDict):
     @staticmethod
     def version():
-        return "0.0.dev35"
+        return "0.0.dev36"
     def __init__(self,
                  environment=":::SHELL",
                  job_queues={"SHELL":shell},
@@ -347,8 +347,8 @@ class sshjobsys(OrderedDict):
                 res = self.shell_run(commandline,server=ssh,cd=sshdir)
                 #try:
                 jobid = int(parse_qsub_output(res["stdout"]))
+                print("qsub: [Job Number] : [Job ID] = %4d : %d"%(len(self),jobid))
                 if jobid>0:
-                    print("qsub: [Job Number] : [Job ID] = %4d : %d"%(len(self),jobid))
                     self[jobid]=pyjob(**{"qsub":res, "jobid":res["jobid"],
                             "jobname":shellname, "state":"",
                             "jc":jc, "startat":now, "git":git_state,
@@ -732,7 +732,7 @@ class pyjob(dict):
 def parse_qsub_output(res):
     assert isinstance(res,str)
     pattern = '.*Your job (\d+) .*has been submitted.*'
-    result = re.match(pattern, res)
+    result = re.match(pattern, repr(res))
     if result:
         jid=result.group(1)
         return jid
