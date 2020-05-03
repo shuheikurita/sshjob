@@ -67,15 +67,15 @@ def ssh_run(commandline,server,cd,ssh_bash_profile=True,debug=False):
     if isinstance(commandline,list):
         commandline=" ".join(commandline)
     assert isinstance(commandline,str)
-    profile  = " if [[ -f .bash_profile ]]; then source .bash_profile fi ;" if ssh_bash_profile else ""
+    profile  = " if [ -f .bash_profile ]; then source .bash_profile ; fi " if ssh_bash_profile else ""
     nohup_pre=nohup_post=""
-    command="ssh -tt %s bash -c \" %s cd %s ;echo __RUN_VIA_SSH__;>&2 echo __RUN_VIA_SSH__; %s %s %s \" "%(server,profile,cd,nohup_pre,commandline,nohup_post)
+    command="ssh -tt %s bash -c \" %s ; cd %s ;echo __RUN_VIA_SSH__;>&2 echo __RUN_VIA_SSH__; %s %s %s \" "%(server,profile,cd,nohup_pre,commandline,nohup_post)
     if debug:
         print("ssh_run:",command)
     res=subprocess.run(command.split(" "), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     result=res.__dict__
-    result["stdout"] = res.stdout.decode("utf-8").split("__RUN_VIA_SSH__\n")[-1] if res.stdout else ""
-    result["stderr"] = res.stderr.decode("utf-8").split("__RUN_VIA_SSH__\n")[-1] if res.stderr else ""
+    result["stdout"] = res.stdout.decode("utf-8").split("__RUN_VIA_SSH__")[-1] if res.stdout else ""
+    result["stderr"] = res.stderr.decode("utf-8").split("__RUN_VIA_SSH__")[-1] if res.stderr else ""
     return result
 
 def ssh_nohup(shellfile,server,cd,ssh_bash_profile=True):
@@ -84,15 +84,15 @@ def ssh_nohup(shellfile,server,cd,ssh_bash_profile=True):
     else:
         commandline=shellfile
     assert isinstance(commandline,str)
-    profile  = " source .bash_profile " if ssh_bash_profile else ""
+    profile  = " if [ -f .bash_profile ]; then source .bash_profile ; fi " if ssh_bash_profile else ""
     nohup_pre =" nohup bash"
     nohup_post=" </dev/null & \n echo $! "
     command="ssh -tt %s bash -c ' %s ; cd %s;echo __RUN_VIA_SSH__;>&2 echo __RUN_VIA_SSH__; %s %s %s '"%(server,profile,cd,nohup_pre,commandline,nohup_post)
     print(command)
     res=subprocess.run(command.split(" "), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     result=res.__dict__
-    result["stdout"] = res.stdout.decode("utf-8").split("__RUN_VIA_SSH__\n")[-1] if res.stdout else ""
-    result["stderr"] = res.stderr.decode("utf-8").split("__RUN_VIA_SSH__\n")[-1] if res.stderr else ""
+    result["stdout"] = res.stdout.decode("utf-8").split("__RUN_VIA_SSH__")[-1] if res.stdout else ""
+    result["stderr"] = res.stderr.decode("utf-8").split("__RUN_VIA_SSH__")[-1] if res.stderr else ""
     try:
         pid=int(result["stdout"].strip())
     except:
