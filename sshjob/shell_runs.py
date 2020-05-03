@@ -67,7 +67,7 @@ def ssh_run(commandline,server,cd,ssh_bash_profile=True,debug=False):
     if isinstance(commandline,list):
         commandline=" ".join(commandline)
     assert isinstance(commandline,str)
-    profile  = " source .bash_profile ;" if ssh_bash_profile else ""
+    profile  = " if [[ -f .bash_profile ]]; then source .bash_profile fi ;" if ssh_bash_profile else ""
     nohup_pre=nohup_post=""
     command="ssh -tt %s bash -c \" %s cd %s ;echo __RUN_VIA_SSH__;>&2 echo __RUN_VIA_SSH__; %s %s %s \" "%(server,profile,cd,nohup_pre,commandline,nohup_post)
     if debug:
