@@ -30,7 +30,7 @@ DEFAULT_JOB_QUEUE={"SGE_DEFAULT":sge_default, "SHELL":shell}
 class sshjobsys(OrderedDict):
     @staticmethod
     def version():
-        return "0.0.dev41"
+        return "0.0.dev45"
     def __init__(self,
                  environment=":::SHELL",
                  job_queues={"SHELL":shell},
@@ -374,13 +374,13 @@ class sshjobsys(OrderedDict):
                     print("[SSHJOB] jobs[JOB_ID (int)] = pyjob(**%s)"%repr)
         self.dump()
 
-    def shell_run(self,commandline,server=None,cd=None,ssh_bash_profile=True):
+    def shell_run(self,commandline,server=None,cd=None,**kwargs):
         system = self.environment.split(":")
         ssh    = None if len(system[0])==0 else system[0]
         sshdir = None if len(system[1])==0 else system[1]
         ssh    = server if server else ssh
         sshdir = cd     if cd     else sshdir
-        self.res = shell_run(commandline,server=ssh,cd=sshdir,ssh_bash_profile=ssh_bash_profile)
+        self.res = shell_run(commandline,server=ssh,cd=sshdir,**kwargs)
         return self.res
 
     def jobfile(self,key,searches=None):
@@ -394,7 +394,7 @@ class sshjobsys(OrderedDict):
         else:
             return self[key]["jobfile"].split("\n")
 
-    def stdout(self,key,line=20,pipe=None,grep=None,pattern=None):
+    def stdout(self,key,line=20,pipe=None,grep=None,pattern=None,**kwargs):
         jid = self.get_jid_from_key(key)
         info = self[jid]
         jobname = info["jobname"]
@@ -412,7 +412,7 @@ class sshjobsys(OrderedDict):
             com="""
              tail -n %d %s ;
             """%(line,fno)
-        res = self.shell_run(com,ssh_bash_profile=False)
+        res = self.shell_run(com,**kwargs)
         if grep:
             assert isinstance(grep,str)
             return "\n".join([l for l in res["stdout"].split("\n") if grep in l])
@@ -422,7 +422,7 @@ class sshjobsys(OrderedDict):
         else:
             return res["stdout"]
 
-    def stderr(self,key,line=20,pipe=None,grep=None,pattern=None):
+    def stderr(self,key,line=20,pipe=None,grep=None,pattern=None,**kwargs):
         jid = self.get_jid_from_key(key)
         info = self[jid]
         jobname = info["jobname"]
@@ -440,7 +440,7 @@ class sshjobsys(OrderedDict):
             com="""
              tail -n %d %s ;
             """%(line,fne)
-        res = self.shell_run(com,ssh_bash_profile=False)
+        res = self.shell_run(com,**kwargs)
         if grep:
             assert isinstance(grep,str)
             return "\n".join([l for l in res["stdout"].split("\n") if grep in l])
@@ -450,7 +450,7 @@ class sshjobsys(OrderedDict):
         else:
             return res["stdout"]
 
-    def track(self,key,line=20):
+    def track(self,key,line=20,**kwargs):
         jid = self.get_jid_from_key(key)
         info = self[jid]
         jobname = info["jobname"]
@@ -467,7 +467,7 @@ class sshjobsys(OrderedDict):
          head -n %d %s ;
          echo -----------------------[SSHJOB]------------------------------- ;
          tail -n %d %s """%(fne,line,fne,line,fne,fno,line,fno,line,fno)
-        res = self.shell_run(com,ssh_bash_profile=False)
+        res = self.shell_run(com,**kwargs)
         return res["stdout"]
 
     def qstat(self,depth=5):

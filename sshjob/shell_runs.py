@@ -11,16 +11,21 @@ from __future__ import unicode_literals
 
 # Util functions that are for running process from python and independent from pyraiden
 
-import subprocess,os
+import subprocess,os,re
 
 TEMP_PYRAIDEN_FILE="__temp.pyraiden__"
 
 ## Run and ssh
 
-def shell_run(commandline,server=None,cd=None,ssh_bash_profile=True):
+bash_types = {
+    1:["bash -c \"", "\""],
+    2:["'", "'"],
+             }
+
+def shell_run(commandline,server=None,cd=None,**kwargs):
     if server:
         cd = cd if cd is not None else "."
-        return ssh_run(commandline,server,cd,ssh_bash_profile=ssh_bash_profile)
+        return ssh_run(commandline,server,cd,**kwargs)
     else:
         if isinstance(commandline,str):
             commandline=commandline.split()
@@ -33,7 +38,7 @@ def shell_run(commandline,server=None,cd=None,ssh_bash_profile=True):
         commandline = " ".join(commandline)
         open(TEMP_PYRAIDEN_FILE,"w").write(commandline)
         res = subprocess.run(["bash",TEMP_PYRAIDEN_FILE], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        os.system("rm "+TEMP_PYRAIDEN_FILE)
+        #os.system("rm "+TEMP_PYRAIDEN_FILE)
 
         result=res.__dict__
         result["stdout"] = res.stdout.decode("utf-8").strip() if res.stdout else ""
@@ -63,41 +68,58 @@ def shell_nohup(shellfile,server=None,cd=None,ssh_bash_profile=True):
         result={"returncode":res,"stdout":"","stderr":""}
         return str(pid),result
 
-def ssh_run(commandline,server,cd,ssh_bash_profile=True,debug=False):
+def ssh_run(commandline,server,cd,ssh_bash_profile=True,debug=False,bash_type=1):
     if isinstance(commandline,list):
         commandline=" ".join(commandline)
     assert isinstance(commandline,str)
     profile  = " if [ -f .bash_profile ]; then source .bash_profile ; fi " if ssh_bash_profile else ""
     nohup_pre=nohup_post=""
-    command="ssh -tt %s bash -c \" %s ; cd %s ;echo __RUN_VIA_SSH__;>&2 echo __RUN_VIA_SSH__; %s %s %s \" "%(server,profile,cd,nohup_pre,commandline,nohup_post)
+    bash_type = bash_types[bash_type]
+    command="ssh -tt %s %s %s ; cd %s ;echo __RUN_VIA_SSH__;>&2 echo __RUN_VIA_SSH__; %s %s %s %s "%\
+            (server,bash_type[0],profile,cd,nohup_pre,commandline,nohup_post,bash_type[1])
     if debug:
         print("ssh_run:",command)
     res=subprocess.run(command.split(" "), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     result=res.__dict__
-    result["stdout"] = res.stdout.decode("utf-8").split("__RUN_VIA_SSH__")[-1] if res.stdout else ""
-    result["stderr"] = res.stderr.decode("utf-8").split("__RUN_VIA_SSH__")[-1] if res.stderr else ""
+    result["stdout"] = res.stdout.decode("utf-8").split("__RUN_VIA_SSH__")[-1].strip() if res.stdout else ""
+    result["stderr"] = res.stderr.decode("utf-8").split("__RUN_VIA_SSH__")[-1].strip() if res.stderr else ""
     return result
 
-def ssh_nohup(shellfile,server,cd,ssh_bash_profile=True):
+def ssh_nohup(shellfile,server,cd,**kwargs):
     if isinstance(shellfile,list):
         commandline=" ".join(shellfile)
     else:
         commandline=shellfile
     assert isinstance(commandline,str)
-    profile  = " if [ -f .bash_profile ]; then source .bash_profile ; fi " if ssh_bash_profile else ""
+#    profile  = " if [ -f .bash_profile ]; then source .bash_profile ; fi " if ssh_bash_profile else ""
     nohup_pre =" nohup bash"
-    nohup_post=" </dev/null & \n echo $! "
-    command="ssh -tt %s bash -c ' %s ; cd %s;echo __RUN_VIA_SSH__;>&2 echo __RUN_VIA_SSH__; %s %s %s '"%(server,profile,cd,nohup_pre,commandline,nohup_post)
-    print(command)
-    res=subprocess.run(command.split(" "), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    result=res.__dict__
-    result["stdout"] = res.stdout.decode("utf-8").split("__RUN_VIA_SSH__")[-1] if res.stdout else ""
-    result["stderr"] = res.stderr.decode("utf-8").split("__RUN_VIA_SSH__")[-1] if res.stderr else ""
-    try:
-        pid=int(result["stdout"].strip())
-    except:
-        pid=-1
-    return str(pid),result
+    nohup_post=" </dev/null & echo PID=$!= "
+#    # MUST BE single quotation.
+#    # MUST NOT USE BASH
+#    # MUST BE sleep at the last.
+#    command="ssh -tt %s ' %s ; cd %s;echo __RUN_VIA_SSH__ >&2 ; echo __RUN_VIA_SSH__ ; %s %s %s ; sleep 2' "%(server,profile,cd,nohup_pre,commandline,nohup_post)
+#    print("command",command)
+#    res=subprocess.run(command.split(" "), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+#    result=res.__dict__
+    command=" %s %s %s ; sleep 2 "%(nohup_pre,commandline,nohup_post)
+    result = shell_run(command,server,cd,**kwargs)
+    #result["stdout"] = res.stdout.decode("utf-8").split("__RUN_VIA_SSH__")[-1].strip() if res.stdout else ""
+    #result["stderr"] = res.stderr.decode("utf-8").split("__RUN_VIA_SSH__")[-1].strip() if res.stderr else ""
+    result=shell_run(command)
+    result["stdout"] = result["stdout"].split("__RUN_VIA_SSH__")[-1].strip()
+    result["stderr"] = result["stderr"].split("__RUN_VIA_SSH__")[-1].strip()
+    return parse_pid_output(result["stdout"]),result
+
+def parse_pid_output(res):
+    assert isinstance(res,str)
+    pattern = '.*PID=(\d+)=.*'
+    result = re.match(pattern, repr(res))
+    if result:
+        jid=result.group(1)
+        return jid
+    else:
+        print("[SSHJOB] NOT SUBMITTED: ",res)
+        return "-1"
 
 def scp(server,sshdir,files):
     assert type(server)==str
