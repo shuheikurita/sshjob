@@ -68,17 +68,21 @@ def shell_nohup(shellfile,server=None,cd=None,**kwargs):
         result={"returncode":res,"stdout":"","stderr":""}
         return str(pid),result
 
-def ssh_run(commandline,server,cd,ssh_bash_profile=True,debug=False,bash_type=1):
+def ssh_run(commandline,server,cd,ssh_bash_profile=True,debug=False,bash_type=1,file_mode=False):
     if isinstance(commandline,list):
         commandline=" ".join(commandline)
     assert isinstance(commandline,str)
     profile  = " if [ -f .bash_profile ]; then source .bash_profile ; fi " if ssh_bash_profile else ""
     bash_type = bash_types[bash_type]
-    command="ssh -tt %s %s %s ; cd %s ; echo __RUN_VIA_SSH__>&2 ; echo __RUN_VIA_SSH__; %s %s "%\
+    command="ssh -tt %s %s %s ; cd %s ; echo __RUN_VIA_SSH__ >&2 ; echo __RUN_VIA_SSH__ ; %s %s "%\
             (server,bash_type[0],profile,cd,commandline,bash_type[1])
     if debug:
         print("ssh_run:",command)
-    res=subprocess.run(command.split(" "), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    if file_mode:
+        open(TEMP_PYRAIDEN_FILE,"w").write(command)
+        res = subprocess.run(["bash",TEMP_PYRAIDEN_FILE], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    else:
+        res=subprocess.run(command.split(" "), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     result=res.__dict__
     result["stdout"] = res.stdout.decode("utf-8").split("__RUN_VIA_SSH__")[-1].strip() if res.stdout else ""
     result["stderr"] = res.stderr.decode("utf-8").split("__RUN_VIA_SSH__")[-1].strip() if res.stderr else ""
