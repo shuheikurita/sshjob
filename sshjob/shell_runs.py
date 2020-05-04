@@ -45,10 +45,10 @@ def shell_run(commandline,server=None,cd=None,**kwargs):
         result["stderr"] = res.stderr.decode("utf-8").strip() if res.stderr else ""
         return result
 
-def shell_nohup(shellfile,server=None,cd=None,ssh_bash_profile=True):
+def shell_nohup(shellfile,server=None,cd=None,**kwargs):
     if server:
         cd = cd if cd is not None else "."
-        return ssh_nohup(shellfile,server,cd,ssh_bash_profile=ssh_bash_profile)
+        return ssh_nohup(shellfile,server,cd,**kwargs)
     else:
         if isinstance(shellfile,str):
             commandline=shellfile.split()
@@ -68,15 +68,14 @@ def shell_nohup(shellfile,server=None,cd=None,ssh_bash_profile=True):
         result={"returncode":res,"stdout":"","stderr":""}
         return str(pid),result
 
-def ssh_run(commandline,server,cd,ssh_bash_profile=False,debug=False,bash_type=1):
+def ssh_run(commandline,server,cd,ssh_bash_profile=True,debug=False,bash_type=1):
     if isinstance(commandline,list):
         commandline=" ".join(commandline)
     assert isinstance(commandline,str)
     profile  = " if [ -f .bash_profile ]; then source .bash_profile ; fi " if ssh_bash_profile else ""
-    nohup_pre=nohup_post=""
     bash_type = bash_types[bash_type]
-    command="ssh -tt %s %s %s ; cd %s ;echo __RUN_VIA_SSH__;>&2 echo __RUN_VIA_SSH__; %s %s %s %s "%\
-            (server,bash_type[0],profile,cd,nohup_pre,commandline,nohup_post,bash_type[1])
+    command="ssh -tt %s %s %s ; cd %s ; echo __RUN_VIA_SSH__>&2 ; echo __RUN_VIA_SSH__; %s %s "%\
+            (server,bash_type[0],profile,cd,commandline,bash_type[1])
     if debug:
         print("ssh_run:",command)
     res=subprocess.run(command.split(" "), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -102,12 +101,12 @@ def ssh_nohup(shellfile,server,cd,**kwargs):
 #    res=subprocess.run(command.split(" "), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 #    result=res.__dict__
     command=" %s %s %s ; sleep 2 "%(nohup_pre,commandline,nohup_post)
-    result = shell_run(command,server,cd,**kwargs)
+    result = ssh_run(command,server,cd,**kwargs)
     #result["stdout"] = res.stdout.decode("utf-8").split("__RUN_VIA_SSH__")[-1].strip() if res.stdout else ""
     #result["stderr"] = res.stderr.decode("utf-8").split("__RUN_VIA_SSH__")[-1].strip() if res.stderr else ""
-    result=shell_run(command)
-    result["stdout"] = result["stdout"].split("__RUN_VIA_SSH__")[-1].strip()
-    result["stderr"] = result["stderr"].split("__RUN_VIA_SSH__")[-1].strip()
+    #result=shell_run(command)
+    #result["stdout"] = result["stdout"].split("__RUN_VIA_SSH__")[-1].strip()
+    #result["stderr"] = result["stderr"].split("__RUN_VIA_SSH__")[-1].strip()
     return parse_pid_output(result["stdout"]),result
 
 def parse_pid_output(res):

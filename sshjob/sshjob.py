@@ -30,7 +30,7 @@ DEFAULT_JOB_QUEUE={"SGE_DEFAULT":sge_default, "SHELL":shell}
 class sshjobsys(OrderedDict):
     @staticmethod
     def version():
-        return "0.0.dev46"
+        return "0.0.dev47"
     def __init__(self,
                  environment=":::SHELL",
                  job_queues={"SHELL":shell},
@@ -230,6 +230,7 @@ class sshjobsys(OrderedDict):
             range=[0],
             qsuboption=[],
             git=False,
+            **kwargs,
              ):
 
         system = self.environment.split(":")
@@ -316,7 +317,7 @@ class sshjobsys(OrderedDict):
                 commandline.append( ">"+shellname+".o"+str(jobid))
                 commandline.append("2>"+shellname+".e"+str(jobid))
 
-                pid,res = shell_nohup(commandline,server=ssh,cd=sshdir)
+                pid,res = shell_nohup(commandline,server=ssh,cd=sshdir,**kwargs)
                 try:
                     #commandline=" ".join(commandline)
                     #TEMP_PYRAIDEN_FILE="__temp.pyraiden__"
@@ -344,7 +345,7 @@ class sshjobsys(OrderedDict):
                     print("[SSHJOB] If the new job is sucessfully running, you can manually add it to pyjobs as:")
                     print("[SSHJOB] jobs[%s] = pyjob(**%s)"%(jobid,repr))
             else:
-                res = self.shell_run(commandline,server=ssh,cd=sshdir)
+                res = self.shell_run(commandline,server=ssh,cd=sshdir,**kwargs)
                 #try:
                 jobid = int(parse_qsub_output(res["stdout"]))
                 print("qsub: [Job Number] : [Job ID] = %4d : %d"%(len(self),jobid))
