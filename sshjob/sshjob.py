@@ -30,7 +30,7 @@ DEFAULT_JOB_QUEUE={"SGE_DEFAULT":sge_default, "SHELL":shell}
 class sshjobsys(OrderedDict):
     @staticmethod
     def version():
-        return "0.0.dev45"
+        return "0.0.dev46"
     def __init__(self,
                  environment=":::SHELL",
                  job_queues={"SHELL":shell},
