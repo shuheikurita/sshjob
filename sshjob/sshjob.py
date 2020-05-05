@@ -30,7 +30,7 @@ DEFAULT_JOB_QUEUE={"SGE_DEFAULT":sge_default, "SHELL":shell}
 class sshjobsys(OrderedDict):
     @staticmethod
     def version():
-        return "0.0.dev47"
+        return "0.0.dev48"
     def __init__(self,
                  environment=":::SHELL",
                  job_queues={"SHELL":shell},
@@ -395,17 +395,27 @@ class sshjobsys(OrderedDict):
         else:
             return self[key]["jobfile"].split("\n")
 
-    def stdout(self,key,line=20,pipe=None,grep=None,pattern=None,**kwargs):
+    def stdout(self,key,line=20,pipe=None,egrep=None,grep=None,pattern=None,**kwargs):
+        system = self.environment.split(":")
+        sshdir = "" if len(system[1])==0 else system[1]
         jid = self.get_jid_from_key(key)
         info = self[jid]
         jobname = info["jobname"]
         fno=jobname+".o"+info["jobid"]
-        print('*** stdout file: %s'%fno)
+        print('*** stdout file: %s/%s'%(sshdir,fno))
         if pipe:
             com="""
              cat %s | %s ;
             """%(fno,pipe)
-        elif line<0 or pattern or grep:
+        elif egrep:
+            com="""
+             cat %s | grep -E \'%s\' ;
+            """%(fno,pipe)
+        elif grep:
+            com="""
+             cat %s | grep \'%s\' ;
+            """%(fno,pipe)
+        elif line<0 or pattern:
             com="""
              cat %s ;
             """%(fno)
@@ -414,24 +424,31 @@ class sshjobsys(OrderedDict):
              tail -n %d %s ;
             """%(line,fno)
         res = self.shell_run(com,**kwargs)
-        if grep:
-            assert isinstance(grep,str)
-            return "\n".join([l for l in res["stdout"].split("\n") if grep in l])
-        elif pattern:
+        if pattern:
             p=re.compile(pattern)
             return "\n".join([l for l in res["stdout"].split("\n") if re.match(p,l)])
         else:
             return res["stdout"]
 
-    def stderr(self,key,line=20,pipe=None,grep=None,pattern=None,**kwargs):
+    def stderr(self,key,line=20,pipe=None,egrep=None,grep=None,pattern=None,**kwargs):
+        system = self.environment.split(":")
+        sshdir = "" if len(system[1])==0 else system[1]
         jid = self.get_jid_from_key(key)
         info = self[jid]
         jobname = info["jobname"]
         fne=jobname+".e"+info["jobid"]
-        print('*** stderr file: %s'%fne)
+        print('*** stderr file: %s/%s'%(sshdir,fne))
         if pipe:
             com="""
              cat %s | %s ;
+            """%(fne,pipe)
+        elif egrep:
+            com="""
+             cat %s | grep -E \'%s\' ;
+            """%(fne,pipe)
+        elif grep:
+            com="""
+             cat %s | grep \'%s\' ;
             """%(fne,pipe)
         elif line<0 or pattern:
             com="""
@@ -442,10 +459,7 @@ class sshjobsys(OrderedDict):
              tail -n %d %s ;
             """%(line,fne)
         res = self.shell_run(com,**kwargs)
-        if grep:
-            assert isinstance(grep,str)
-            return "\n".join([l for l in res["stdout"].split("\n") if grep in l])
-        elif pattern:
+        if pattern:
             p=re.compile(pattern)
             return "\n".join([l for l in res["stdout"].split("\n") if re.match(p,l)])
         else:

@@ -68,7 +68,7 @@ def shell_nohup(shellfile,server=None,cd=None,**kwargs):
         result={"returncode":res,"stdout":"","stderr":""}
         return str(pid),result
 
-def ssh_run(commandline,server,cd,ssh_bash_profile=True,debug=False,bash_type=1,file_mode=False):
+def ssh_run(commandline,server,cd,debug=False,ssh_bash_profile=True,bash_type=1,file_mode=False):
     if isinstance(commandline,list):
         commandline=" ".join(commandline)
     assert isinstance(commandline,str)
